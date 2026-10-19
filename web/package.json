@@ -1,0 +1,21 @@
+{
+  "name": "acumen-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Acumen - installable web app (PWA) for the Acumen market analysis pipeline",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:inline": "node build.mjs --inline",
+    "dev": "node build.mjs --watch",
+    "test": "node --test test/health.test.mjs"
+  },
+  "dependencies": {
+    "lightweight-charts": "5.2.1"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-mono": "5.3.0",
+    "@fontsource/ibm-plex-sans": "5.3.0",
+    "esbuild": "0.28.2"
+  }
+}

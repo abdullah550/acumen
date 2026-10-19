@@ -1,0 +1,16 @@
+# Price history kept between runs: the workflow keeps it on the `data` branch, never on `main`.
+/store/
+# The assembled site (app + data files): built by the workflow.
+/site/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+web/node_modules/
+web/dist-inline/
+
+.DS_Store
+Thumbs.db

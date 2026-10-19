@@ -1,0 +1,11 @@
+# Versions Acumen was developed and tested with. The upper bounds stop a future major release from changing behaviour
+# under a scheduled run; raise them after running the tests (python -m pytest tests -q) against the newer version.
+numpy>=2.3,<3
+pandas>=3.0,<4
+scipy>=1.15,<2
+requests>=2.31,<3
+beautifulsoup4>=4.12,<5
+lxml>=5.0,<7
+PyYAML>=6.0,<7
+cryptography>=43.0,<48
+python-dateutil>=2.8,<3

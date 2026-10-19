@@ -1,0 +1,177 @@
+/* ==========================================================================
+   Acumen design tokens
+   Neutrals lean toward the violet accent (hue ~265). Every colour is a token
+   defined on bare :root first; dark and colour-blind variants only redefine.
+   ========================================================================== */
+:root {
+  color-scheme: light;
+
+  /* type */
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-2xs: 11px;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 26px;
+  --fs-3xl: 34px;
+
+  /* space + shape */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px; --s-10: 40px;
+  --r-xs: 4px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+  --rail-w: 232px;
+  --topbar-h: 56px;
+  --tabbar-h: 60px;
+  --row-h: 42px;
+  --ease: cubic-bezier(.2,.7,.2,1);
+
+  /* surfaces */
+  --bg: #f5f4fa;
+  --surface: #ffffff;
+  --surface-2: #eeedf6;
+  --surface-3: #e4e2f0;
+  --line: #e2e0ee;
+  --line-strong: #c9c6dc;
+  --overlay: rgba(20, 18, 31, 0.45);
+  --shadow-1: 0 1px 2px rgba(34, 24, 90, 0.06), 0 1px 1px rgba(34, 24, 90, 0.04);
+  --shadow-2: 0 10px 30px rgba(34, 24, 90, 0.16), 0 2px 6px rgba(34, 24, 90, 0.08);
+
+  /* ink */
+  --ink: #14121f;
+  --ink-2: #4a475c;
+  --ink-3: #65627a;
+  --ink-inv: #ffffff;
+
+  /* accent */
+  --accent: #5a3fd9;
+  --accent-ink: #ffffff;
+  --accent-soft: #ece8fd;
+  --accent-line: #cdc3f7;
+
+  /* direction (default: green / red). Marks always travel with an arrow or sign. */
+  --up: #0ca30c;
+  --up-ink: #006300;
+  --down: #d03b3b;
+  --down-ink: #b32a2a;
+
+  /* status */
+  --good: #0ca30c;
+  --warning: #fab219;
+  --warning-ink: #7a5200;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+
+  /* categorical: market identity (validated for both themes) */
+  --mk-psx: #2a78d6;
+  --mk-fx: #eb6834;
+  --mk-crypto: #1baf7a;
+
+  /* sequential ramp (accent hue) for heat + magnitude */
+  --seq-1: #ece8fd; --seq-2: #cfc5f8; --seq-3: #ae9ff0; --seq-4: #8a76e6; --seq-5: #6a52da; --seq-6: #4a33b5;
+
+  /* diverging neutral midpoint */
+  --mid: #efeef5;
+
+  /* chart chrome */
+  --grid: #e8e6f1;
+  --axis: #c9c6dc;
+  --crosshair: #8a87a0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #0f0e15;
+    --surface: #17151f;
+    --surface-2: #1f1c2b;
+    --surface-3: #292539;
+    --line: #2a2738;
+    --line-strong: #3b3750;
+    --overlay: rgba(4, 3, 10, 0.62);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+    --ink: #f4f3fa;
+    --ink-2: #bdbad0;
+    --ink-3: #8f8ca6;
+    --ink-inv: #14102e;
+    --accent: #a392ff;
+    --accent-ink: #14102e;
+    --accent-soft: #272044;
+    --accent-line: #413670;
+    --up: #0ca30c;
+    --up-ink: #2fc24a;
+    --down: #d03b3b;
+    --down-ink: #f06a6a;
+    --warning-ink: #fab219;
+    --mk-psx: #3987e5;
+    --mk-fx: #d95926;
+    --mk-crypto: #199e70;
+    --seq-1: #241d42; --seq-2: #33296a; --seq-3: #4a3a96; --seq-4: #6a55c8; --seq-5: #8d7bec; --seq-6: #b3a6ff;
+    --mid: #25222f;
+    --grid: #232030;
+    --axis: #3b3750;
+    --crosshair: #8f8ca6;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f0e15;
+  --surface: #17151f;
+  --surface-2: #1f1c2b;
+  --surface-3: #292539;
+  --line: #2a2738;
+  --line-strong: #3b3750;
+  --overlay: rgba(4, 3, 10, 0.62);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  --ink: #f4f3fa;
+  --ink-2: #bdbad0;
+  --ink-3: #8f8ca6;
+  --ink-inv: #14102e;
+  --accent: #a392ff;
+  --accent-ink: #14102e;
+  --accent-soft: #272044;
+  --accent-line: #413670;
+  --up: #0ca30c;
+  --up-ink: #2fc24a;
+  --down: #d03b3b;
+  --down-ink: #f06a6a;
+  --warning-ink: #fab219;
+  --mk-psx: #3987e5;
+  --mk-fx: #d95926;
+  --mk-crypto: #199e70;
+  --seq-1: #241d42; --seq-2: #33296a; --seq-3: #4a3a96; --seq-4: #6a55c8; --seq-5: #8d7bec; --seq-6: #b3a6ff;
+  --mid: #25222f;
+  --grid: #232030;
+  --axis: #3b3750;
+  --crosshair: #8f8ca6;
+}
+
+/* Colour-blind friendly direction colours: blue = up, orange = down.
+   Declared after the theme blocks so it wins inside either theme. */
+:root[data-palette="cb"] {
+  --up: #2a78d6; --up-ink: #1c5cab;
+  --down: #eb6834; --down-ink: #b4471b;
+  --good: #2a78d6; --critical: #eb6834; /* status marks follow the same pair, so "ok" and "error" never rely on red against green */
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-palette="cb"]:not([data-theme="light"]) {
+    --up: #3987e5; --up-ink: #6da7ec;
+    --down: #d95926; --down-ink: #f08a5d;
+    --good: #3987e5; --critical: #d95926;
+  }
+}
+:root[data-theme="dark"][data-palette="cb"] {
+  --up: #3987e5; --up-ink: #6da7ec;
+  --down: #d95926; --down-ink: #f08a5d;
+  --good: #3987e5; --critical: #d95926;
+}
+
+/* Density */
+:root[data-density="compact"] { --row-h: 34px; }
+@media (max-width: 760px) {
+  :root { --fs-md: 15px; --fs-sm: 14px; --fs-xs: 12.5px; --row-h: 46px; }
+  :root[data-density="compact"] { --row-h: 38px; }
+}

@@ -1,0 +1,126 @@
+# Refreshes Acumen: fetches every market, analyses it, publishes the app and keeps the price history for the next run.
+#
+# One-time setup (see README.md): Settings > Pages > Source: "GitHub Actions"; Settings > Secrets and variables > Actions >
+# add the secret ACUMEN_PASSPHRASE (keeps the published data and the stored history private on a public repository).
+name: Refresh Acumen
+
+on:
+  schedule:
+    # 00:17, 06:17, 12:17, 18:17 UTC = 05:17, 11:17, 17:17, 23:17 in Pakistan. The 12:17 run follows the PSX close; the 00:17 run
+    # follows the daily close of forex and crypto. GitHub may start scheduled runs late.
+    - cron: "17 0,6,12,18 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "acumen/**"
+      - "web/dist/**"
+      - "config.yml"
+      - "requirements.txt"
+      - ".github/workflows/refresh.yml"
+
+# One run at a time: two runs would race to replace the stored history.
+concurrency:
+  group: acumen-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: write   # replaces the single commit on the `data` branch (the price history) and the one on `report-refresh` (the log)
+  pages: write
+  id-token: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # the very first run downloads years of history; later runs take a few minutes
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      ACUMEN_PASSPHRASE: ${{ secrets.ACUMEN_PASSPHRASE }}
+      COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+      ACUMEN_CONTACT: ${{ vars.ACUMEN_CONTACT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fails in the first minute, not after the long download, when Pages is not switched on yet
+      # (Settings > Pages > Build and deployment > Source: GitHub Actions).
+      - uses: actions/configure-pages@v5
+
+      - name: Say what is public
+        run: |
+          if [ -z "$ACUMEN_PASSPHRASE" ]; then
+            echo "::warning title=Not encrypted::ACUMEN_PASSPHRASE is not set. The data files, the ideas Acumen issues and the stored price history will be readable by anyone who can open this repository. Add the secret to keep them private."
+          fi
+
+      - name: Restore the stored price history
+        id: restore
+        shell: bash
+        run: |
+          mkdir -p store
+          rc=0
+          git ls-remote --exit-code --heads origin data > /dev/null 2>&1 || rc=$?
+          if [ "$rc" -eq 0 ]; then
+            git fetch --depth=1 origin data
+            git archive FETCH_HEAD | tar -x -C store
+            echo "Restored $(find store -type f | wc -l) files from the data branch"
+          elif [ "$rc" -eq 2 ]; then
+            echo "No data branch yet: this run starts the history from scratch"
+          else
+            echo "::error title=Could not reach GitHub::The stored price history could not be looked up (git ls-remote exit code $rc). Stopping rather than risk replacing it with an empty one."
+            exit 1
+          fi
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Refresh the data
+        shell: bash   # with pipefail, so the tee below cannot hide a failing run
+        timeout-minutes: 105   # a very long first download is stopped here, leaving time to keep what it fetched (next step)
+        run: python -m acumen refresh --store store --out site/data 2>&1 | tee refresh.txt
+
+      # Also after a failed or stopped refresh: what was fetched is kept, so the next run carries on instead of starting over.
+      # Never when the earlier history could not be restored, because then the new store would not contain what is already saved.
+      - name: Keep the price history for the next run
+        if: ${{ always() && steps.restore.outputs.ok == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          find store -name '*.tmp' -delete
+          if ! compgen -G "store/bars_*" > /dev/null; then
+            echo "Nothing was fetched, so there is nothing to keep"
+            exit 0
+          fi
+          # the checkout's own credential, reused for the history repository below
+          HEADER="$(git config --local --get http.https://github.com/.extraheader)"
+          cd store
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Price history $(date -u +%Y-%m-%dT%H:%MZ)"
+          git -c "http.https://github.com/.extraheader=${HEADER}" push --force "https://github.com/${GITHUB_REPOSITORY}.git" data:refs/heads/data
+
+      - name: Assemble the site
+        run: |
+          cp -R web/dist/. site/
+          touch site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
+
+      # The log is also kept on the `report-refresh` branch (file refresh.txt), so it can be read without opening the run.
+      - name: Keep the log
+        if: always()
+        run: bash scripts/keep_report.sh report-refresh refresh.txt

@@ -1,0 +1,51 @@
+# Acumen settings you may want to change.
+#
+# Copy this file to `config.yml` (same folder), delete what you do not want to change and edit the rest. Only the keys you
+# write are changed; everything else keeps the value in acumen/default_config.yml, which lists every setting with a comment.
+# Committing config.yml to the repository starts a new refresh. Nothing here is needed to run Acumen.
+
+# --- Who you are ------------------------------------------------------------------------------------------------------
+app:
+  account_currency: PKR        # PKR or USD: the currency position sizes are shown in
+  default_equity: 1000000      # the account size used for sizing until you change it inside the app
+
+# --- Central-bank policy rates (percent) ----------------------------------------------------------------------------
+# These feed the forex carry factor and the Pakistan real rate. Nobody supplies them: look them up on the central banks'
+# own websites. To update, remove the # signs below, list only the currencies that changed, and set `as_of` to the day you
+# looked them up (YYYY-MM-DD). The app flags the table as stale after 120 days, so an `as_of` you did not earn is a false claim.
+#rates:
+#  as_of: "YYYY-MM-DD"
+#  policy_rate_pct:
+#    PKR: 0.0
+#    USD: 0.0
+
+# --- Risk profiles --------------------------------------------------------------------------------------------------------
+# risk_per_trade_pct: the share of equity you lose if the stop is hit. max_heat_pct: total of that across open ideas.
+# min_grade: lowest conviction grade (A, B or C) an idea needs to be included.
+portfolio:
+  profiles:
+    balanced: {risk_per_trade_pct: 1.0, max_heat_pct: 6.0, max_positions: 8, min_grade: B, max_per_sector: 2, max_per_market_pct: 60}
+
+# --- Trading costs: round trip, as a fraction of the amount traded ----------------------------------------------------------
+# Check them against your broker. Costs are deducted in every back-test and expectation.
+costs:
+  psx: 0.0060                  # brokerage, CDC, SECP levy, taxes and slippage on both legs
+  crypto: 0.0025
+
+# --- How strict the evidence test is -------------------------------------------------------------------------------------
+# A market and horizon can only produce actionable ideas if its plans beat random entries with the same exits, at this
+# one-sided significance level. 0.01 is strict: expect few or no actionable ideas on real data. 0.05 shows more of them and
+# accepts roughly a 1-in-20 chance, per market and horizon, of acting on noise.
+backtest:
+  edge_alpha: 0.01
+
+# --- Other filters ----------------------------------------------------------------------------------------------------------
+signals:
+  min_exp_r: 0.02              # expected result (in R, after costs) an idea must have to be actionable
+
+universe:
+  psx:
+    min_adv_value: 5000000     # PKR traded per day a stock needs to be recommended
+  crypto:
+    top_n: 500                 # by market cap
+    min_24h_volume_usd: 2000000
