@@ -72,7 +72,7 @@ class FakeSession:
         full = url
         if params:
             full += ("&" if "?" in url else "?") + "&".join(f"{k}={v}" for k, v in params.items())
-        call = {"method": method.upper(), "url": url, "full": full, "params": params, "data": data, "json": json, "headers": headers}
+        call = {"method": method.upper(), "url": url, "full": full, "params": params, "data": data, "json": json, "headers": headers, "timeout": timeout}
         self.calls.append(call)
         for m, rx, answer in self.routes:
             if m == method.upper() and rx.search(full):

@@ -10,7 +10,7 @@ import pytest
 from acumen.analysis import macro as analysis_macro
 from acumen.config import load_config
 from acumen.fetch import macro as M
-from acumen.fetch.http import Client, ParseError
+from acumen.fetch.http import BreakerOpen, Client, FetchError, HttpError, ParseError, RateLimited
 from acumen.store import HistoryStore
 from tests.fake_macro import MacroWorld
 from tests.fakenet import FakeClock, FakeSession
@@ -25,19 +25,19 @@ def config(**macro):
     return cfg
 
 
-def new_client(session=None) -> Client:
-    clock = FakeClock()
+def new_client(session=None, clock=None) -> Client:
+    clock = clock or FakeClock()
     return Client("TestAgent/1.0", session=session if session is not None else FakeSession(), sleep=clock.sleep, clock=clock, default_interval=0.0)
 
 
-def go(world: MacroWorld, store, *, cfg=None, gold=True):
+def go(world: MacroWorld, store, *, cfg=None, gold=True, clock=None):
     sess = world.session()
     if gold:  # the dollar price of gold is the futures contract Yahoo serves for GC=F
         from tests.fake_fx import FxWorld
         fx = FxWorld().at(world.today, world.hour, world.minute)
         fx.down = {"yahoo"} if "yahoo" in world.down else set()
         sess.routes.extend(fx.session().routes)
-    macro, statuses, notes = M.fetch_macro(cfg or config(), store, new_client(sess), log=lambda m: None, now=world.now())
+    macro, statuses, notes = M.fetch_macro(cfg or config(), store, new_client(sess, clock), log=lambda m: None, now=world.now())
     return macro, {s.source: s for s in statuses}, notes, sess
 
 
@@ -153,6 +153,43 @@ def test_a_fred_error_page_is_refused_and_counted_not_read_as_data(tmp_path):
     macro, st, _, _ = go(w, HistoryStore(tmp_path))
     assert "DGS2" not in macro["series"] and {"FEDFUNDS", "T10Y2Y", "US10Y"} <= set(macro["series"])
     assert st["fred"].ok is True and "1 failed" in st["fred"].message
+
+
+def test_a_fred_that_does_not_answer_costs_seconds_not_minutes(tmp_path):
+    """From some data centres FRED simply hangs. Waiting 30 s three times for each of five series cost three minutes per run."""
+    w = MacroWorld().at(FRI)
+    w.down = {"fred"}  # the stand-in answers 503; a real timeout is treated the same way (see test_one_bad_series_is_told_apart_from_an_unreachable_fred)
+    clock = FakeClock()
+    macro, st, notes, sess = go(w, HistoryStore(tmp_path), clock=clock)
+    assert sess.count(r"fredgraph") == 2  # the first series and its single retry: the other series and the Pakistan policy rate are not even asked for
+    assert st["fred"].ok is False and "4 failed" in st["fred"].message and "FRED did not answer" in st["fred"].message
+    assert clock.now - 1000.0 < 30  # simulated seconds spent waiting
+    assert {"DXY", "US10Y", "GOLD", "BRENT", "SPX", "VIX", "MSCI_EM"} <= set(macro["series"])  # Yahoo's series are untouched
+    assert {"FEDFUNDS", "DGS2", "T10Y2Y"}.isdisjoint(macro["series"]) and any("no data for" in n and "FEDFUNDS" in n for n in notes)
+    assert "policy_rate" not in macro["pk"]  # the configured table is used
+
+
+def test_a_fred_that_answers_slowly_is_still_read_with_the_short_timeout(tmp_path):
+    w = MacroWorld().at(FRI)
+    macro, st, _, sess = go(w, HistoryStore(tmp_path))
+    assert st["fred"].ok is True and "4 series" in st["fred"].message and sess.count(r"fredgraph") == 5  # four series and the policy rate
+    asked = [c for c in sess.calls if "fredgraph" in c["full"]]
+    assert asked and all(c["timeout"] == M.FRED_TIMEOUT for c in asked)
+
+
+@pytest.mark.parametrize("exc, unreachable", [
+    (FetchError("ReadTimeout: timed out"), True),  # what a hanging FRED raises: no HTTP status at all
+    (HttpError("HTTP 500", status=500), True),
+    (HttpError("HTTP 503", status=503), True),
+    (HttpError("HTTP 403", status=403), True),
+    (RateLimited("rate limited (HTTP 429)", status=429), True),
+    (BreakerOpen("fred.stlouisfed.org is being skipped for this run"), True),
+    (HttpError("HTTP 400", status=400), False),  # FRED's answer for a series that does not exist
+    (HttpError("HTTP 404", status=404), False),
+    (ParseError("FRED answered something other than DGS2"), False),
+])
+def test_one_bad_series_is_told_apart_from_an_unreachable_fred(exc, unreachable):
+    assert M.fred_unreachable(exc) is unreachable
 
 
 def test_everything_down_gives_an_empty_panel_not_a_crash(tmp_path):

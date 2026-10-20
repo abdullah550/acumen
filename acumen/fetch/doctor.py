@@ -283,16 +283,10 @@ def check_macro_fred(ctx: Ctx) -> str:
     ids = [str(x) for x in (ctx.cfg.get_path("data.macro.fred_series", []) or [])] or ["FEDFUNDS"]
     pol = str(ctx.cfg.get_path("data.macro.pk_policy_fred", "") or "")
     start = (pd.Timestamp(ctx.now.date()) - pd.Timedelta(days=400)).strftime("%Y-%m-%d")
-    got, bad = [], []
-    for sid in dict.fromkeys([*ids, "DGS10", *([pol] if pol else [])]):
-        try:
-            s = mc.parse_fred_csv(ctx.http.get(mc.FRED_URL, params={"id": sid, "cosd": start}, interval=0.5).text, sid)
-            got.append(f"{sid} {pd.Timestamp(s.index[-1]).date()}")
-        except FetchError:
-            bad.append(sid)
+    got, bad, down = mc.read_fred(ctx.http, list(dict.fromkeys([*ids, "DGS10", *([pol] if pol else [])])), start)
     if not got:
-        raise Problem("no FRED series answered")
-    return "; ".join(got) + (f"; not answering: {', '.join(bad)}" if bad else "")
+        raise Problem("no FRED series answered" + (" in time" if down else ""))
+    return "; ".join(f"{sid} {pd.Timestamp(s.index[-1]).date()}" for sid, s in got.items()) + (f"; not answering: {', '.join(bad)}" if bad else "")
 
 
 def check_macro_inflation(ctx: Ctx) -> str:
@@ -305,7 +299,7 @@ def check_macro_inflation(ctx: Ctx) -> str:
         errors.append(f"IMF: {exc}")
     try:
         v, y = mc.parse_worldbank_inflation(ctx.http.get(mc.WORLD_BANK_URL, params={"format": "json", "per_page": 8}).json())
-        return f"World Bank: Pakistan inflation {v:.1f}% for {y} (the IMF did not answer)"
+        return f"World Bank: Pakistan inflation {v:.1f}% for {y} (the IMF did not answer: {errors[0].removeprefix('IMF: ')})"
     except FetchError as exc:
         errors.append(f"World Bank: {exc}")
     raise Problem("; ".join(errors))

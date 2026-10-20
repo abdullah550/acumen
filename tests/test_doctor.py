@@ -122,6 +122,16 @@ def test_all_forex_sources_down_is_down():
     assert doctor.verdicts(res)["fx"][0] == "down" and doctor.exit_code(res) == 1
 
 
+def test_the_inflation_check_says_why_the_imf_feed_failed():
+    r = by_key(run(Worlds().down("imf"), only="macro.inflation"))["macro.inflation"]
+    assert r.state == doctor.OK and "World Bank" in r.detail and "the IMF did not answer: HTTP 503" in r.detail
+
+
+def test_a_fred_that_does_not_answer_is_one_short_warning():
+    r = by_key(run(Worlds().down("fred"), only="macro.fred"))["macro.fred"]
+    assert r.state == doctor.WARN and "no FRED series answered in time" in r.detail
+
+
 def test_macro_outage_never_fails_the_run():
     res = run(Worlds().down("yahoo", "fred", "imf", "worldbank"), only="macro")
     assert {r.state for r in res} == {doctor.WARN}

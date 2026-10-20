@@ -40,6 +40,7 @@ WORLD_BANK_URL = "https://api.worldbank.org/v2/country/PAK/indicator/FP.CPI.TOTL
 KEEP_POINTS = 520
 MAX_SAVED_AGE_DAYS = 14
 FRED_NAMES = {"FEDFUNDS": "FEDFUNDS", "DGS2": "DGS2", "T10Y2Y": "T10Y2Y"}  # FRED id -> series name in the app
+FRED_TIMEOUT = 12.0  # seconds. FRED is slow to answer or silent from some data centres, and its series have substitutes: do not wait long
 
 
 # ---------------------------------------------------------------------------------------------- parsers
@@ -68,6 +69,30 @@ def parse_fred_csv(text: str, series_id: str) -> pd.Series:
         raise ParseError(f"FRED has no observations for {series_id}")
     s = pd.Series(values, index=pd.DatetimeIndex(days), dtype="float64").sort_index()
     return s[~s.index.duplicated(keep="last")]
+
+
+def fred_unreachable(exc: FetchError) -> bool:
+    """FRED as a whole is out of reach (a timeout, a refused connection, a 5xx, being blocked or limited), as opposed to one bad series
+    (an error page, a 400 or 404): there is no point asking for the others."""
+    if isinstance(exc, ParseError):
+        return False
+    return exc.status is None or exc.status >= 500 or exc.status in (401, 403, 429)
+
+
+def read_fred(http: Client, ids: list[str], start: str) -> tuple[dict[str, pd.Series], list[str], bool]:
+    """``(series by id, ids that did not come, FRED unreachable)``. A short wait and one retry per series; when FRED cannot be reached at
+    all the first failure ends the attempt, so an unreachable FRED costs about half a minute, not several."""
+    got: dict[str, pd.Series] = {}
+    bad: list[str] = []
+    for i, sid in enumerate(ids):
+        try:
+            text = http.get(FRED_URL, params={"id": sid, "cosd": start}, interval=0.5, timeout=FRED_TIMEOUT, retries=1).text
+            got[sid] = parse_fred_csv(text, sid)
+        except FetchError as exc:
+            bad.append(sid)
+            if fred_unreachable(exc):
+                return got, [*bad, *ids[i + 1:]], True
+    return got, bad, False
 
 
 def parse_imf_inflation(payload: Any, year: int) -> tuple[float, int]:
@@ -167,16 +192,10 @@ def fetch_macro(
         statuses.append(status("yahoo_macro", served > 0, f"{served} of {len(symbols)} series" + (f", {failed} failed" if failed else ""), items=served, now=now))
 
     # ---- FRED
-    fred: dict[str, pd.Series] = {}
     ids = list(dict.fromkeys([*fred_ids, "DGS10"])) if fred_ids else []
-    f_failed = 0
-    for sid in ids:
-        try:
-            fred[sid] = parse_fred_csv(http.get(FRED_URL, params={"id": sid, "cosd": start}, interval=0.5).text, sid)
-        except FetchError:
-            f_failed += 1
+    fred, f_bad, fred_down = read_fred(http, ids, start) if ids else ({}, [], False)
     if ids:
-        statuses.append(status("fred", len(fred) > 0, f"{len(fred)} series" + (f", {f_failed} failed" if f_failed else ""), items=len(fred), now=now))
+        statuses.append(status("fred", len(fred) > 0, f"{len(fred)} series" + (f", {len(f_bad)} failed" if f_bad else "") + (" (FRED did not answer)" if fred_down else ""), items=len(fred), now=now))
     for sid, name in FRED_NAMES.items():
         if sid in fred:
             series[name] = fred[sid]
@@ -184,11 +203,9 @@ def fetch_macro(
         series["US10Y"] = fred["DGS10"]
         notes.append("US 10-year yield comes from FRED: the Yahoo symbol was unavailable")
     policy_series = None
-    if policy_id:
-        try:
-            policy_series = parse_fred_csv(http.get(FRED_URL, params={"id": policy_id, "cosd": start}, interval=0.5).text, policy_id)
-        except FetchError:
-            policy_series = None  # optional: the configured table is the normal source
+    if policy_id and not fred_down:
+        policy, _, _ = read_fred(http, [policy_id], start)
+        policy_series = policy.get(policy_id)  # optional: the configured table is the normal source
 
     # ---- anything missing comes from an earlier run's copy, and says so
     wanted = set(symbols) | {FRED_NAMES[i] for i in fred_ids if i in FRED_NAMES} | ({"US10Y"} if ids else set())
