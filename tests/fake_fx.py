@@ -45,6 +45,7 @@ class FxWorld:
         self.ecb_scale: dict[str, float] = {}  # currency -> multiplier applied to the ECB fixings
         self.cap_days: dict[str, int] = {}  # Yahoo symbol -> the most days of history it will ever return, whatever the range
         self.bad_ticks: dict[tuple[str, dt.date], float] = {}  # (pair, day) -> factor applied to that day's high
+        self.stray: dict[str, tuple[float, set[dt.date]]] = {}  # Yahoo symbol -> (factor, days): on those days the open, low and close come from a second quote level
         self.live_lag_hours = 0.0
         self.log: list[str] = []
         rng = np.random.default_rng(seed)
@@ -138,11 +139,18 @@ class FxWorld:
                 return ok({"chart": {"result": None, "error": {"code": "Not Found", "description": "No data found, symbol may be delisted"}}})
             first = pd.Timestamp(world.today - dt.timedelta(days=min(RANGE_DAYS[call["params"]["range"]], world.cap_days.get(sym, 10**6))))
             b = b[b.index >= first]
+            live_price = float(b["close"].iloc[-1])  # the live tick stays clean: it is the daily bars that carry the second level
+            if sym in world.stray:
+                factor, days = world.stray[sym]
+                hit = b.index.isin([pd.Timestamp(d) for d in days])
+                b = b.copy()
+                for col in ("open", "low", "close"):
+                    b.loc[hit, col] = b.loc[hit, col] * factor
             ts = [int(dt.datetime(d.year, d.month, d.day, tzinfo=dt.timezone.utc).timestamp()) - BST for d in b.index]  # midnight in London
             last_day = b.index[-1].date()  # a weekend's "live" price is Friday's last
             live = world.now() if last_day == world.today else dt.datetime(last_day.year, last_day.month, last_day.day, 21, 59, tzinfo=dt.timezone.utc)
             last_t = int(live.timestamp()) - int(world.live_lag_hours * 3600)
-            return ok({"chart": {"result": [{"meta": {"gmtoffset": BST, "symbol": sym, "regularMarketPrice": float(b["close"].iloc[-1]), "regularMarketTime": last_t,
+            return ok({"chart": {"result": [{"meta": {"gmtoffset": BST, "symbol": sym, "regularMarketPrice": live_price, "regularMarketTime": last_t,
                                                       "exchangeTimezoneName": "Europe/London"},
                                              "timestamp": ts, "indicators": {"quote": [{"open": b["open"].tolist(), "high": b["high"].tolist(), "low": b["low"].tolist(),
                                                                                          "close": b["close"].tolist(), "volume": [0] * len(b)}]}}], "error": None}})

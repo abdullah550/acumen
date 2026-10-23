@@ -202,6 +202,27 @@ def check_fx_pkr(ctx: Ctx) -> str:
     return _yahoo_any(ctx, fxm.Pair("USDPKR", "USD", "PKR", "pkr"), min_rows=10, max_age=8)
 
 
+def check_fx_pkr_peg(ctx: Ctx) -> str:
+    """Yahoo's dollar-rupee closes against the rupee's crosses with the dirham and the riyal, which are pegged to the dollar.
+
+    In autumn 2026 Yahoo's own series mixed a second quote level, about 3% away, into most of its daily bars (see
+    :func:`acumen.fetch.fx.pkr_reference`). A run repairs such bars; this says whether Yahoo is doing it right now.
+    """
+    usd, _ = yahoo_mod.chart(ctx.http, "USDPKR=X", range_="1mo")
+    ref = fxm.pkr_reference(ctx.http, "1mo")
+    if ref is None:
+        raise Problem("neither the dirham's nor the riyal's cross with the rupee answered, so the dollar-rupee bars could not be checked")
+    days = usd.index.intersection(ref.index[ref["close"].notna()])
+    if len(days) < 5:
+        raise Problem(f"only {len(days)} days to set Yahoo's dollar-rupee bars against the crosses (expected at least 5)")
+    gap = (usd.loc[days, "close"] / ref.loc[days, "close"] - 1.0).abs()
+    off = gap[gap > fxm.PKR_CLOSE_TOL]
+    if len(off):
+        raise Problem(f"{len(off)} of {len(days)} dollar-rupee closes differ from the crosses by more than {fxm.PKR_CLOSE_TOL:.1%} (largest {gap.max():.1%}, on {gap.idxmax().date()}): "
+                      "Yahoo has mixed a second quote level into its bars")
+    return f"{len(days)} closes agree with the crosses (largest difference {gap.max():.2%})"
+
+
 def check_fx_metal(ctx: Ctx) -> str:
     return _yahoo_any(ctx, fxm.Pair("XAUUSD", "XAU", "USD", "metal", "metal", fxm.METALS["XAU"][1]))
 
@@ -317,6 +338,7 @@ def checks() -> list[Check]:
         c("psx.yahoo", "psx", "Yahoo: fallback history", check_psx_yahoo, False, "no fallback if the portal fails"),
         c("fx.yahoo", "fx", "Yahoo: forex prices", check_fx_yahoo, True, "daily fixings from the European Central Bank replace them (no highs or lows)"),
         c("fx.pkr", "fx", "Yahoo: USD/PKR", check_fx_pkr, False, "the rupee rate comes from the ECB fixings and daily snapshots"),
+        c("fx.pkr_peg", "fx", "Yahoo: USD/PKR against its crosses", check_fx_pkr_peg, False, "dollar-rupee bars that stray are repaired from the crosses, when the crosses answer"),
         c("fx.metal", "fx", "Yahoo: gold", check_fx_metal, False, "gold and silver are left out"),
         c("fx.frankfurter", "fx", "ECB daily fixings (Frankfurter)", check_fx_frankfurter, False, "Yahoo alone supplies forex"),
         c("fx.fawaz", "fx", "Daily rate snapshots (currency-api)", check_fx_fawaz, False, "the rupee has one source less to be checked against"),
@@ -417,7 +439,7 @@ def verdicts(results: list[Result]) -> dict[str, tuple[str, str]]:
         elif not ok("fx.yahoo"):
             out["fx"] = ("degraded", "Yahoo is down: daily ECB fixings replace it (no highs or lows)")
         else:
-            verdict("fx", None, ["fx.pkr", "fx.metal"])
+            verdict("fx", None, ["fx.pkr", "fx.pkr_peg", "fx.metal"])
     if "crypto" in have:
         venues = [r.key for r in results if r.group == "crypto" and r.key not in ("crypto.coingecko", "crypto.fng")]
         any_venue = any(ok(k) for k in venues)

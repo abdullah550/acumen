@@ -175,6 +175,80 @@ def pair_from_legs(legs: pd.DataFrame, base: str, quote: str) -> pd.DataFrame:
     return close_only(q / b)
 
 
+# ---------------------------------------------------------------------------------------------- the rupee
+PKR_REFERENCE_RANGE = "6mo"  # the most that is asked of Yahoo for the pegged crosses: more than the window that is checked
+PKR_REPAIR_DAYS = 150  # only the newest bars are checked: further back, the rupee's interbank and open-market rates once differed by far more than a feed's glitch
+PKR_CLOSE_TOL = 0.008  # a dollar-rupee close this far from what the pegged crosses imply is another feed's quote, not the market
+PKR_FIELD_TOL = 0.012  # the same for an open, high or low: a single tick can stray a little further
+PKR_REF_SPREAD = 0.015  # the dirham and the riyal must agree this closely on a day for that day to serve as the reference
+
+
+RANGES = ("1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "max")  # Yahoo's, shortest first
+
+
+def pkr_range(asked: str | None) -> str:
+    """How much of the pegged crosses is worth asking for: what the dollar-rupee request itself covered, and never more than is checked."""
+    if asked not in RANGES or RANGES.index(asked) > RANGES.index(PKR_REFERENCE_RANGE):
+        return PKR_REFERENCE_RANGE
+    return str(asked)
+
+
+def pkr_reference(http: Client, range_: str = PKR_REFERENCE_RANGE) -> pd.DataFrame | None:
+    """Daily USD/PKR bars as the rupee's crosses with the dirham and the riyal imply them, or ``None`` when neither is available.
+
+    Both currencies are pegged to the dollar (:data:`PEGS`), so ``AED/PKR x 3.6725`` is the dollar rate by another road. Yahoo's
+    own dollar-rupee series mixed a second quote level, about 3% away, into most days of autumn 2026 (a close of 268 one day and 277
+    the next, while the market sat at 277), and these crosses stayed clean. A day on which the two crosses disagree gives no
+    reference: with one witness each, there is no telling which is right.
+    """
+    parts = []
+    for ccy, peg in PEGS.items():
+        try:
+            df, _ = yahoo_mod.chart(http, f"{ccy}PKR=X", range_=range_)
+        except FetchError:
+            continue
+        df, _ = clean_bars(df, max_gap=SPIKE["pkr"], label=f"{ccy}PKR")
+        if len(df):
+            parts.append(df[["open", "high", "low", "close"]] * peg)
+    if not parts:
+        return None
+    if len(parts) == 1:
+        return parts[0]
+    idx = parts[0].index.union(parts[1].index)
+    a, b = parts[0].reindex(idx), parts[1].reindex(idx)
+    both = a.notna() & b.notna()
+    ref = ((a + b) / 2.0).where(~both | ((a / b - 1.0).abs() <= PKR_REF_SPREAD))
+    return ref.where(~(a.notna() & b.isna()), a).where(~(b.notna() & a.isna()), b)
+
+
+def repair_pkr(df: pd.DataFrame | None, ref: pd.DataFrame | None) -> tuple[pd.DataFrame | None, pd.DatetimeIndex]:
+    """Replace the open, high, low or close of dollar-rupee bars that sit away from ``ref`` by the reference's value.
+
+    Only the newest :data:`PKR_REPAIR_DAYS` days are looked at. Returns the frame and the days that were changed (the frame
+    itself, untouched, when there were none); a day without a reference is left as it is.
+    """
+    none = pd.DatetimeIndex([])
+    if df is None or len(df) == 0 or ref is None or len(ref) == 0:
+        return df, none
+    idx = df.index.intersection(ref.index)
+    idx = idx[idx >= df.index[-1] - pd.Timedelta(days=PKR_REPAIR_DAYS)]
+    if len(idx) == 0:
+        return df, none
+    out = df.copy()
+    hit = pd.Series(False, index=out.index)
+    for col, tol in (("open", PKR_FIELD_TOL), ("high", PKR_FIELD_TOL), ("low", PKR_FIELD_TOL), ("close", PKR_CLOSE_TOL)):
+        r = ref.loc[idx, col]
+        bad = ((out.loc[idx, col] / r - 1.0).abs() > tol) & r.notna()
+        if bad.any():
+            out.loc[bad[bad].index, col] = r[bad]
+            hit.loc[bad[bad].index] = True
+    if not hit.any():
+        return df, none
+    out.loc[hit, "high"] = out.loc[hit, ["open", "high", "close"]].max(axis=1)  # a repaired day's range still holds its open and close
+    out.loc[hit, "low"] = out.loc[hit, ["open", "low", "close"]].min(axis=1)
+    return out, out.index[hit.to_numpy()]
+
+
 # ---------------------------------------------------------------------------------------------- parsers
 def parse_frankfurter(payload: Any) -> pd.DataFrame:
     """A time series answer as a frame of units per dollar: one row per fixing date, one column per currency."""
@@ -362,7 +436,26 @@ def fetch_fx(
     notes: list[str] = []
     served: Counter = Counter()
     failed: Counter = Counter()
+    repaired: set[pd.Timestamp] = set()  # the dollar-rupee days that were changed, counted once however many times they were looked at
     quotes: dict[str, dict[str, Any]] = {}
+    pkr_ref_cache: list[tuple[str, pd.DataFrame | None]] = []  # (range, reference): asked for once per run, and only when there is something to check
+    pkr_checked: list[pd.Timestamp] = []  # the newest day a reference vouched for in this run
+
+    def pkr_vet(df: pd.DataFrame, asked: str | None = None) -> pd.DataFrame:
+        """Dollar-rupee bars checked against the pegged crosses and, where they stray, repaired (see :func:`pkr_reference`)."""
+        want = pkr_range(asked)
+        if not pkr_ref_cache or RANGES.index(pkr_ref_cache[0][0]) < RANGES.index(want):
+            usable = "yahoo" in sources and not all(http.is_open(h) for h in yahoo_mod.HOSTS)
+            pkr_ref_cache[:] = [(want, pkr_reference(http, want) if usable else None)]
+        ref = pkr_ref_cache[0][1]
+        if ref is None or df is None or len(df) == 0:
+            return df
+        out, days = repair_pkr(df, ref)
+        repaired.update(days)
+        vouched = df.index.intersection(ref.index[ref["close"].notna()])  # a day on which the two crosses disagreed vouches for nothing
+        if len(vouched):
+            pkr_checked.append(vouched.max())
+        return out  # type: ignore[return-value]
 
     def fresh(p: Pair) -> bool:
         have = bars.get(p.id)
@@ -371,14 +464,16 @@ def fetch_fx(
     def wants_yahoo(p: Pair) -> bool:
         return not fresh(p) or p.symbol in fallback_from  # bars a fallback supplied are replaced as soon as Yahoo can
 
-    def accept(p: Pair, df: pd.DataFrame, source: str) -> bool:
-        """Clean ``df`` and splice it onto what is stored. True when it was used."""
+    def accept(p: Pair, df: pd.DataFrame, source: str, asked: str | None = None) -> bool:
+        """Clean ``df`` and splice it onto what is stored. True when it was used. ``asked`` is the Yahoo range ``df`` came from."""
         have = bars.get(p.id)
         df = df[(df.index <= last_ok) & (df.index >= history_start)]
         df, _ = clean_bars(df, max_gap=SPIKE[p.group], label=p.symbol)
         df, _ = repair_wicks(df, WICK[p.group])
         if len(df) == 0:
             return False
+        if p.symbol == "USDPKR" and source == "yahoo":
+            df = pkr_vet(df, asked)
         cut = pd.Timestamp(fallback_from[p.symbol]) if (source == "yahoo" and p.symbol in fallback_from) else None
         base = have[have.index < cut] if (cut is not None and have is not None) else have  # Yahoo replaces what a fallback supplied
         if base is not None and len(base) and df.index[0] > base.index[-1] + pd.Timedelta(days=6):
@@ -395,6 +490,12 @@ def fetch_fx(
             new_days = merged.index if prev_last is None else merged.index[merged.index > prev_last]
             fallback_from[p.symbol] = str(new_days[0].date())
         return True
+
+    # ---- the rupee: stored bars not yet checked are checked against the pegged crosses before anything new is joined to them
+    checked_through = pd.Timestamp(state["pkr_checked"]) if state.get("pkr_checked") else None
+    stored_pkr = bars.get("FX:USDPKR")
+    if stored_pkr is not None and len(stored_pkr) and (checked_through is None or checked_through < stored_pkr.index[-1]):
+        bars["FX:USDPKR"] = pkr_vet(stored_pkr)  # type: ignore[assignment]
 
     # ---- yahoo
     yahoo_hosts = yahoo_mod.HOSTS
@@ -415,12 +516,13 @@ def fetch_fx(
             else:
                 gap = int(years * 365.25) + 10
             got = False
+            asked = range_for(gap)
             for sym in p.yahoo:
                 try:
-                    df, meta = yahoo_mod.chart(http, sym, range_=range_for(gap))
+                    df, meta = yahoo_mod.chart(http, sym, range_=asked)
                 except FetchError:
                     continue
-                if not accept(p, df, "yahoo"):
+                if not accept(p, df, "yahoo", asked):
                     continue
                 if sym == p.proxy:
                     notes.append(f"{p.symbol} follows the {sym} futures contract: Yahoo has no spot series for it")
@@ -436,6 +538,9 @@ def fetch_fx(
         if served["yahoo"] or failed["yahoo"]:
             tripped = all(http.is_open(h) for h in yahoo_hosts)
             statuses.append(status("yahoo_fx", not tripped and served["yahoo"] > 0, f"bars for {served['yahoo']} pair(s)" + (f", {failed['yahoo']} failed" if failed["yahoo"] else ""), items=served["yahoo"], started=t0, now=now))
+
+    if repaired:
+        notes.append(f"{len(repaired)} dollar-rupee bar(s) were repaired: Yahoo mixed a second quote level into them, so they were checked against the rupee's crosses with the dirham and the riyal, which are pegged to the dollar")
 
     # ---- the European Central Bank's fixings, for what Yahoo could not give
     behind = [p for p in real if not fresh(p)]
@@ -537,6 +642,8 @@ def fetch_fx(
     # ---- persistence
     state["src"] = src_state
     state["fallback_from"] = fallback_from
+    if pkr_checked:
+        state["pkr_checked"] = str(max([*pkr_checked, *([checked_through] if checked_through is not None else [])]).date())
     store.save_json(STATE, state)
     real_ids = {p.id for p in real}
     keepers = {i: b for i, b in bars.items() if i in real_ids and len(b)}

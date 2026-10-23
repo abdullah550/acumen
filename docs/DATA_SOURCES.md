@@ -20,7 +20,8 @@ connection but refuse GitHub's servers, or the other way round, so run it from b
 |---|---|---|
 | Symbol list, sector, today's market watch | PSX data portal, `dps.psx.com.pk` | The exchange's own site back end. Undocumented. Primary source. |
 | Daily open, high, low, close, volume for every stock | the same portal, one request per past trading day | Gives every symbol for that day in one reply. The first runs walk backwards from today (a budget of `data.psx.max_requests_per_run`, 450, per run) until `data.psx.history_years` (5) are reached; true high and low are kept for `data.psx.ohlc_days` (400) trading days and the older history is close only. |
-| Corporate actions (bonus, rights, dividends) | derived from the portal's "last day close" column | The portal's prices are not adjusted, but its last-day close is. When it differs from yesterday's stored close, all earlier prices are scaled by the ratio. If more than a quarter of all stocks show a "corporate action" on one day, a trading day was missed instead and no adjustment is made. |
+| Corporate actions (bonus, rights, dividends, splits, consolidations) | derived from the portal's "last day close" column, with a safety net on the stored history | The portal's prices are not adjusted, but its last-day close is. When it differs from yesterday's stored close, all earlier prices are scaled by the ratio (and the volumes by its inverse for a split or a consolidation). A factor beyond 2 or below 1/2 is only believed when that day's own close agrees with the adjusted last-day close. If more than a quarter of all stocks show a "corporate action" on one day, a trading day was missed instead and no adjustment is made. As a safety net, a one-day move of 5 times or more (or 0.2 or less) that holds for three bars and matches a round ratio such as 10 for 1 is treated as an unadjusted split and healed in the stored history; any other jump above 50% is only listed in the log. |
+| Joining the older days to the newer ones | the same column, carried across the join | Days fetched later for the older end of the history are scaled by the corporate actions that followed them, so a split between two runs does not leave a cliff in the series. A store built before this rule existed is rebuilt from the portal once; the old bars stay in use until the rebuild holds at least 250 trading days (or the whole target), and a rebuild that fails leaves them as they were. |
 | Fundamentals (market cap, P/E, EPS, dividend yield, P/B, ROE ...) | TradingView's public screener (`scanner.tradingview.com`), one request for every Pakistan stock | Unofficial endpoint. TradingView is credited on the app's About page. If it stops answering, fundamentals are missing and the app says so; prices are unaffected. Also a last-resort price snapshot. |
 | Fallback history for liquid stocks with too little history, and the KSE-100 if the portal's index route fails | Yahoo Finance chart API | See below. |
 
@@ -48,6 +49,13 @@ Sources, tried in this order, each only for what the one before could not delive
    per missing day. It can only bridge a short gap (`data.fx.fawaz_max_days`, 10 days).
 
 Bars from the last two are provisional: when Yahoo works again it replaces them.
+
+**The rupee is checked against its own crosses.** In autumn 2026 Yahoo's USD/PKR daily bars mixed a second quote level, about 3% below the market (a close of
+268 one day and 277 the next), into most days. The dirham and the riyal are pegged to the dollar, so Yahoo's AED/PKR times 3.6725 and SAR/PKR times 3.75 give the
+dollar rate by another road and stayed clean. Acumen therefore asks for those two crosses whenever USD/PKR bars arrive from Yahoo (and once for the bars already
+stored), and replaces the open, high, low or close of any of the newest 150 days that sits more than 0.8% (1.2% for an open, high or low) away from them. A day on
+which the two crosses disagree by more than 1.5% vouches for nothing and is left alone; one cross is enough when the other does not answer; without either the bars
+are kept as they come. The market note says how many bars were repaired, and the doctor's line "Yahoo: USD/PKR against its crosses" says whether Yahoo is doing it right now.
 
 Pairs follow the market convention for the G8 (EUR > GBP > AUD > NZD > USD > CAD > CHF > JPY: the earlier currency is the base); exotics are quoted per US dollar.
 The **rupee crosses** (EUR/PKR, AED/PKR ...) are *synthetic*: the dollar rate times the other currency's dollar rate (the dirham and the riyal are pegged, so their

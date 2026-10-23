@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import datetime as dt
+from urllib.parse import unquote
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -61,6 +63,19 @@ def truth(world, sym) -> pd.Series:
 
 def yahoo_calls(sess):
     return [c for c in sess.calls if "finance.yahoo.com" in c["url"]]
+
+
+def yahoo_asked(sess) -> dict[str, set[str]]:
+    """Which Yahoo ranges were asked for each symbol."""
+    out: dict[str, set[str]] = {}
+    for c in yahoo_calls(sess):
+        out.setdefault(unquote(c["url"].rsplit("/", 1)[1]), set()).add(c["params"]["range"])
+    return out
+
+
+def stray_since(w: FxWorld, first: dt.date, *, every: int = 2, factor: float = 0.97) -> dict[str, tuple[float, set[dt.date]]]:
+    """Yahoo's dollar-rupee bars with a second quote level mixed into every ``every``-th day from ``first`` on."""
+    return {"USDPKR=X": (factor, {d for d in w.dates[::every] if d >= first})}
 
 
 # ------------------------------------------------------------------------------------------------ the whole pipeline
@@ -339,6 +354,142 @@ def test_a_wick_that_never_traded_is_pulled_in_and_flagged(tmp_path):
     assert gbp.loc[day, "high"] <= gbp.loc[day, ["open", "close"]].max() * 1.0001 and bool(approx(gbp).loc[day])
     assert int(approx(gbp).sum()) == 1
     assert closes(md, "GBPUSD").tolist() == pytest.approx(truth(w, "GBPUSD").loc[gbp.index].tolist())
+
+
+# ------------------------------------------------------------------------------------------------ the rupee
+SINCE = dt.date(2026, 9, 7)
+
+
+def test_a_second_quote_level_in_yahoos_dollar_rupee_bars_is_repaired_from_the_pegged_crosses(tmp_path):
+    w = FxWorld().at(FRI)
+    w.stray = stray_since(w, SINCE)
+    store = HistoryStore(tmp_path)
+    md, _, _ = go(w, store)
+
+    pkr = bars(md, "USDPKR")
+    want = w.bars("USDPKR").loc[pkr.index]
+    assert pkr[["open", "high", "low", "close"]].to_numpy() == pytest.approx(want.to_numpy())  # every field is the market's, the stray days included
+    strayed = [d for d in w.stray["USDPKR=X"][1] if pd.Timestamp(d) in pkr.index]
+    assert len(strayed) > 10
+    assert any(f"{len(strayed)} dollar-rupee bar(s) were repaired" in n for n in md.extras["notes"])
+    assert closes(md, "EURPKR").tolist() == pytest.approx((closes(md, "USDPKR") * closes(md, "EURUSD")).tolist())
+    assert store.load_bars("fx")["FX:USDPKR"]["close"].tolist() == pytest.approx(closes(md, "USDPKR").tolist())  # what is stored is the repaired series
+    assert store.load_json("fx_state")["pkr_checked"] == str(THU)
+
+
+def test_a_repaired_rupee_costs_nothing_on_the_next_run(tmp_path):
+    w = FxWorld().at(FRI)
+    w.stray = stray_since(w, SINCE)
+    store = HistoryStore(tmp_path)
+    md1, _, _ = go(w, store)
+    md2, s2, _ = go(w, store)
+    assert yahoo_calls(s2) == []
+    pd.testing.assert_series_equal(closes(md2, "USDPKR"), closes(md1, "USDPKR"), check_freq=False, check_index_type=False)
+    assert not any("dollar-rupee" in n for n in md2.extras["notes"])
+
+
+def test_a_new_dollar_rupee_day_is_repaired_and_the_crosses_are_asked_for_no_further_back_than_the_dollar_rupee_was(tmp_path):
+    w = FxWorld().at(THU)
+    w.stray = stray_since(w, SINCE, every=1)  # every day, so that the day that arrives next is one of them
+    store = HistoryStore(tmp_path)
+    go(w, store)
+
+    w.at(FRI)
+    md, s2, _ = go(w, store)
+    pkr = closes(md, "USDPKR")
+    assert pkr.index[-1] == pd.Timestamp(THU)
+    assert pkr.tolist() == pytest.approx(truth(w, "USDPKR").loc[pkr.index].tolist())
+    asked = yahoo_asked(s2)
+    assert {"USDPKR=X", "AEDPKR=X", "SARPKR=X"} <= set(asked) and set().union(*asked.values()) == {"1mo"}
+    assert store.load_json("fx_state")["pkr_checked"] == str(THU)
+
+
+def test_bars_stored_before_the_check_existed_are_checked_once_before_anything_new_is_joined_to_them(tmp_path):
+    w = FxWorld().at(THU)
+    w.stray = stray_since(w, SINCE, every=1)
+    w.unknown = {"AEDPKR=X", "SARPKR=X"}  # no witness, so the first run stores the second quote level as it comes
+    store = HistoryStore(tmp_path)
+    md1, _, _ = go(w, store)
+    pkr1 = closes(md1, "USDPKR")
+    assert pkr1.iloc[-1] == pytest.approx(truth(w, "USDPKR").loc[pkr1.index[-1]] * 0.97)
+    assert "pkr_checked" not in store.load_json("fx_state") and not any("dollar-rupee" in n for n in md1.extras["notes"])
+
+    w.unknown = set()
+    w.at(FRI)
+    md2, s2, _ = go(w, store)
+    pkr2 = closes(md2, "USDPKR")
+    assert pkr2.tolist() == pytest.approx(truth(w, "USDPKR").loc[pkr2.index].tolist())  # the stored days as well as the new one
+    assert yahoo_asked(s2)["AEDPKR=X"] == {"6mo"}
+    assert any("dollar-rupee bar(s) were repaired" in n for n in md2.extras["notes"])
+
+    w.at(FRI, 5)
+    md3, s3, _ = go(w, store)
+    assert "AEDPKR=X" not in yahoo_asked(s3) and closes(md3, "USDPKR").iloc[-1] == pytest.approx(pkr2.iloc[-1])  # once is enough
+
+
+@pytest.mark.parametrize("label", ["none", "disagreeing"])
+def test_the_rupee_is_left_as_it_comes_when_the_crosses_cannot_vouch_for_it(tmp_path, label):
+    w = FxWorld().at(FRI)
+    w.stray = stray_since(w, SINCE, every=1)
+    if label == "none":
+        w.unknown = {"AEDPKR=X", "SARPKR=X"}
+    else:
+        w.scale = {"AEDPKR=X": 1.04}  # the dirham's cross and the riyal's disagree by 4%: there is no telling which is right
+    md, _, _ = go(w, HistoryStore(tmp_path))
+    pkr = closes(md, "USDPKR")
+    assert pkr.iloc[-1] == pytest.approx(truth(w, "USDPKR").loc[pkr.index[-1]] * 0.97)  # untouched
+    assert not any("dollar-rupee" in n for n in md.extras["notes"])
+    assert "pkr_checked" not in HistoryStore(tmp_path).load_json("fx_state")
+
+
+def test_one_cross_is_enough_to_vouch_for_the_rupee(tmp_path):
+    w = FxWorld().at(FRI)
+    w.stray = stray_since(w, SINCE)
+    w.unknown = {"SARPKR=X"}
+    md, _, _ = go(w, HistoryStore(tmp_path))
+    pkr = closes(md, "USDPKR")
+    assert pkr.tolist() == pytest.approx(truth(w, "USDPKR").loc[pkr.index].tolist())
+
+
+def test_pkr_range_asks_for_what_the_dollar_rupee_request_covered_and_never_more_than_is_checked():
+    assert [F.pkr_range(r) for r in ("1mo", "3mo", "6mo")] == ["1mo", "3mo", "6mo"]
+    assert [F.pkr_range(r) for r in ("1y", "5y", "max", "nonsense", None)] == ["6mo"] * 5
+
+
+def test_pkr_reference_is_the_dollar_rate_by_way_of_the_dirham_and_the_riyal():
+    w = FxWorld().at(FRI)
+    day, before = pd.Timestamp(THU), pd.Timestamp(THU) - pd.Timedelta(days=1)
+    ref = F.pkr_reference(new_client(w.session()), "3mo")
+    assert ref is not None and ref.loc[day, "close"] == pytest.approx(w.close("USDPKR").loc[day])
+    w.unknown = {"SARPKR=X"}
+    assert F.pkr_reference(new_client(w.session()), "3mo").loc[day, "close"] == pytest.approx(w.close("USDPKR").loc[day])  # one will do
+    w.unknown = {"AEDPKR=X", "SARPKR=X"}
+    assert F.pkr_reference(new_client(w.session()), "3mo") is None
+    w.unknown = set()
+    w.stray = {"AEDPKR=X": (0.97, {THU})}  # the dirham's cross alone strays, on one day
+    ref = F.pkr_reference(new_client(w.session()), "3mo")
+    assert pd.isna(ref.loc[day, "close"]) and ref.loc[before, "close"] == pytest.approx(w.close("USDPKR").loc[before])
+
+
+def test_repair_pkr_replaces_only_what_strays_and_only_in_the_newest_window():
+    idx = pd.bdate_range("2026-01-01", periods=260)
+    base = pd.DataFrame({"open": 277.0, "high": 277.5, "low": 276.5, "close": 277.0}, index=idx)
+    ref, df = base.copy(), base.copy()
+    df.loc[idx[-3], ["open", "high", "low", "close"]] = [268.0, 276.9, 267.5, 268.0]  # a second level, inside the window
+    df.loc[idx[5], "close"] = 268.0  # the same, far outside it: left alone
+    df.loc[idx[-2], "close"] = 277.0 * 1.005  # an ordinary difference between feeds: left alone
+    df.loc[idx[-1], "close"] = 268.0  # stray, but there is no reference for that day
+    ref.loc[idx[-1]] = np.nan
+    out, days = F.repair_pkr(df, ref)
+    assert list(days) == [idx[-3]]
+    assert out.loc[idx[-3], ["open", "high", "low", "close"]].tolist() == [277.0, 277.0, 276.5, 277.0]  # and the day's range still holds its open and close
+    assert out.loc[idx[5], "close"] == 268.0 and out.loc[idx[-1], "close"] == 268.0 and out.loc[idx[-2], "close"] == pytest.approx(277.0 * 1.005)
+    assert df.loc[idx[-3], "close"] == 268.0  # the frame that was given is not touched
+
+    same, none = F.repair_pkr(base, ref)
+    assert len(none) == 0 and same is base
+    assert F.repair_pkr(df, None)[0] is df and len(F.repair_pkr(df, None)[1]) == 0
+    assert F.repair_pkr(None, ref)[0] is None
 
 
 def test_live_quote_is_dropped_when_stale_or_wild(tmp_path):

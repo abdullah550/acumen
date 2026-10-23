@@ -122,6 +122,29 @@ def test_all_forex_sources_down_is_down():
     assert doctor.verdicts(res)["fx"][0] == "down" and doctor.exit_code(res) == 1
 
 
+def test_the_dollar_rupee_check_sets_yahoos_bars_against_the_pegged_crosses():
+    r = by_key(run(Worlds(), only="fx.pkr_peg"))["fx.pkr_peg"]
+    assert r.state == doctor.OK and "closes agree with the crosses" in r.detail
+
+
+def test_a_second_quote_level_in_yahoos_dollar_rupee_bars_is_a_warning_that_says_what_the_run_does_about_it():
+    w = Worlds()
+    w.fx.stray = {"USDPKR=X": (0.97, set(w.fx.dates))}
+    res = run(w, only="fx")
+    r = by_key(res)["fx.pkr_peg"]
+    assert r.state == doctor.WARN and "differ from the crosses by more than 0.8%" in r.detail and "second quote level" in r.detail and "3.0%" in r.detail
+    state, why = doctor.verdicts(res)["fx"]
+    assert state == "degraded" and "repaired from the crosses" in why
+    assert doctor.exit_code(res) == 0
+
+
+def test_without_the_crosses_the_dollar_rupee_cannot_be_checked_and_the_check_says_so():
+    w = Worlds()
+    w.fx.unknown = {"AEDPKR=X", "SARPKR=X"}
+    r = by_key(run(w, only="fx.pkr_peg"))["fx.pkr_peg"]
+    assert r.state == doctor.WARN and "could not be checked" in r.detail
+
+
 def test_the_inflation_check_says_why_the_imf_feed_failed():
     r = by_key(run(Worlds().down("imf"), only="macro.inflation"))["macro.inflation"]
     assert r.state == doctor.OK and "World Bank" in r.detail and "the IMF did not answer: HTTP 503" in r.detail
