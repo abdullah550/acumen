@@ -1,0 +1,274 @@
+
+=== DNS
+DNS answer: ['52.128.23.6']
+IPv6: none [Errno -5] No address associated with hostname
+
+=== node DNS default, user agent app
+GET /
+  STATUS 200 bytes=95423 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.977330s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /data/symbol-position
+  STATUS 404 bytes=47177 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.650244s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /symbols
+  STATUS 404 bytes=47164 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.635816s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /market-watch
+  STATUS 404 bytes=47169 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.600863s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /indices
+  STATUS 200 bytes=56323 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.598523s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/eod/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.425065s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/int/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.600946s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /company/OGDC
+  STATUS 200 bytes=74936 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.984629s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+POST /historical date=2026-10-22
+  STATUS 404 bytes=47167 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.579055s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+
+=== node DNS default, user agent browser
+GET /
+  STATUS 200 bytes=95423 type=text/html; charset=utf-8 ip=52.128.23.6 time=2.357139s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /data/symbol-position
+  STATUS 404 bytes=47177 type=text/html; charset=utf-8 ip=52.128.23.6 time=2.068171s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /symbols
+  STATUS 404 bytes=47164 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.597349s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /market-watch
+  STATUS 404 bytes=47169 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.930101s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /indices
+  STATUS 200 bytes=56323 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.885566s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/eod/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.331512s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/int/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.373405s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /company/OGDC
+  STATUS 200 bytes=74936 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.742422s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+POST /historical date=2026-10-22
+  STATUS 404 bytes=47167 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.374343s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+
+=== node 52.128.23.6, user agent app
+GET /
+  STATUS 200 bytes=95423 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.333496s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /data/symbol-position
+  STATUS 404 bytes=47177 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.370477s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /symbols
+  STATUS 404 bytes=47164 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.370558s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /market-watch
+  STATUS 404 bytes=47169 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.420321s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /indices
+  STATUS 200 bytes=56323 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.598095s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/eod/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.569327s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/int/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.324072s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /company/OGDC
+  STATUS 200 bytes=74936 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.727001s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+POST /historical date=2026-10-22
+  STATUS 404 bytes=47167 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.328634s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+
+=== node 52.128.23.6, user agent browser
+GET /
+  STATUS 200 bytes=95423 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.590523s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /data/symbol-position
+  STATUS 404 bytes=47177 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.329067s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /symbols
+  STATUS 404 bytes=47164 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.368329s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /market-watch
+  STATUS 404 bytes=47169 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.328548s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /indices
+  STATUS 200 bytes=56323 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.328727s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/eod/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.558381s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /timeseries/int/OGDC
+  STATUS 404 bytes=47176 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.314976s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+GET /company/OGDC
+  STATUS 200 bytes=74936 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.736341s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+POST /historical date=2026-10-22
+  STATUS 404 bytes=47167 type=text/html; charset=utf-8 ip=52.128.23.6 time=1.328307s
+      headers: Server: nginx/1.20.2 | Content-Type: text/html; charset=utf-8 | X-Frame-Options: SAMEORIGIN | X-Permitted-Cross-Domain-Policies: none | X-Content-Type-Options: nosniff | X-Frame-Options: SAMEORIGIN
+      body: <!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google-site
+
+=== node 52.128.23.16, user agent app
+GET /
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.928245s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 498f945784440a397fe9a07b05cd02ac | Set-Cookie: dis-request-id=498f945784440a397fe9a07b05cd02ac; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:49-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /data/symbol-position
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.925427s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 69a849e6ce861b85e4d9ddc477420a7e | Set-Cookie: dis-request-id=69a849e6ce861b85e4d9ddc477420a7e; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:50-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /symbols
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.927192s
+      headers: Content-Type: text/html | X-DIS-Request-ID: dafe733301679b014a5bd4b2b8fcd1c7 | Set-Cookie: dis-request-id=dafe733301679b014a5bd4b2b8fcd1c7; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:51-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /market-watch
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.929391s
+      headers: Content-Type: text/html | X-DIS-Request-ID: dac056ff8a0e23ab035f40a9288093ae | Set-Cookie: dis-request-id=dac056ff8a0e23ab035f40a9288093ae; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:52-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /indices
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.927137s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 098c0d11072ebb2a99553f0c540a1499 | Set-Cookie: dis-request-id=098c0d11072ebb2a99553f0c540a1499; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:53-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /timeseries/eod/OGDC
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.926667s
+      headers: Content-Type: text/html | X-DIS-Request-ID: a7ec9a2c9b3663808938bb8518dc5412 | Set-Cookie: dis-request-id=a7ec9a2c9b3663808938bb8518dc5412; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:54-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /timeseries/int/OGDC
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.927329s
+      headers: Content-Type: text/html | X-DIS-Request-ID: c21e1ac3c3d9868b64b9084ea4433107 | Set-Cookie: dis-request-id=c21e1ac3c3d9868b64b9084ea4433107; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:55-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /company/OGDC
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.929466s
+      headers: Content-Type: text/html | X-DIS-Request-ID: dc21341bfe96e8f5494acfe613d2753b | Set-Cookie: dis-request-id=dc21341bfe96e8f5494acfe613d2753b; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:56-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+POST /historical date=2026-10-22
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.928379s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 20d36251b4a5b554b022b9a5b53a51bc | Set-Cookie: dis-request-id=20d36251b4a5b554b022b9a5b53a51bc; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:57-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+
+=== node 52.128.23.16, user agent browser
+GET /
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.928429s
+      headers: Content-Type: text/html | X-DIS-Request-ID: c1c5dd40bf06f5baa7e0eed3a0f85fea | Set-Cookie: dis-request-id=c1c5dd40bf06f5baa7e0eed3a0f85fea; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:58-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /data/symbol-position
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.927239s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 8bbee8cc3869b7cafcbe291eb41a9c51 | Set-Cookie: dis-request-id=8bbee8cc3869b7cafcbe291eb41a9c51; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:58-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /symbols
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.929472s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 3dda03a74173f78ae4e07270c972a4b1 | Set-Cookie: dis-request-id=3dda03a74173f78ae4e07270c972a4b1; secure | Set-Cookie: dis-timestamp=2026-10-23T18:36:59-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /market-watch
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.926259s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 9cf7a9203c42e243cad8b891e4dc425b | Set-Cookie: dis-request-id=9cf7a9203c42e243cad8b891e4dc425b; secure | Set-Cookie: dis-timestamp=2026-10-23T18:37:00-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /indices
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.928365s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 503c40c1a3d46d93e58438db616ebbf6 | Set-Cookie: dis-request-id=503c40c1a3d46d93e58438db616ebbf6; secure | Set-Cookie: dis-timestamp=2026-10-23T18:37:01-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /timeseries/eod/OGDC
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.927060s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 92fb0bcaf6d628a708d2b42dec3e4297 | Set-Cookie: dis-request-id=92fb0bcaf6d628a708d2b42dec3e4297; secure | Set-Cookie: dis-timestamp=2026-10-23T18:37:02-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /timeseries/int/OGDC
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.928822s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 30771639e46f0447925f7cb1e866a4ff | Set-Cookie: dis-request-id=30771639e46f0447925f7cb1e866a4ff; secure | Set-Cookie: dis-timestamp=2026-10-23T18:37:03-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+GET /company/OGDC
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.928520s
+      headers: Content-Type: text/html | X-DIS-Request-ID: d836b9c646f50eea79c1c1a0623cdf55 | Set-Cookie: dis-request-id=d836b9c646f50eea79c1c1a0623cdf55; secure | Set-Cookie: dis-timestamp=2026-10-23T18:37:04-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+POST /historical date=2026-10-22
+  STATUS 502 bytes=922 type=text/html ip=52.128.23.16 time=0.929212s
+      headers: Content-Type: text/html | X-DIS-Request-ID: 32602e07f398156dc79a024bf2806f4f | Set-Cookie: dis-request-id=32602e07f398156dc79a024bf2806f4f; secure | Set-Cookie: dis-timestamp=2026-10-23T18:37:05-07:00; secure | Set-Cookie: dis-remote-addr=40.81.7.225; secure | X-Frame-Options: sameorigin
+      body: <!DOCTYPE html> <html> <head> <meta http-equiv="Content-type" content="text/html;charset=UTF-8"> <title>Performing Maintenance</title> <style type="text/cs
+
+=== the site's front page, links to its data routes
+href="https://dps.psx.com.pk/static/images/favicon.png"
+href="https://dps.psx.com.pk/static/images/logo-200.png"
+href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700"
+href="/static/styles.css?v=1.76"
+src="/static/script.js?v=1.76"
+src="https://www.google.com/recaptcha/api.js"
+src="/static/images/logo-white-bg.png"
+href="/sukuk"
+href="https://knowledgecenter.psx.com.pk/"
+href="https://www.psx.com.pk/"
+href="/"
+src="/static/images/data-portal-text.png"
+href="/portfolio"
+href="/"
+href="/trading-panel"
+href="/indices"
+href="/debt-market"
+href="/sector-summary"
+href="/screener"
+href="/historical"
+href="/eligible-scrips"
+href="/graphical-view"
+href="/announcements/psx"
+href="/announcements/companies"
+href="/corporate-briefing"
+href="/announcements/cdc"
+href="/announcements/secp"
+href="/announcements/nccpl"
+href="/calendar"
+href="/payouts"
+href="/gis-auction-results"
+href="/listings"
+href="/circuit-breakers"
+href="/downloads"
+href="https://financials.psx.com.pk/"
+href="/analysis-reports"
+href="/nd-verification"
+href="/indices-div-discount"
+href="/monthly-reports"
+href="/progress-report"
