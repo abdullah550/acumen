@@ -1,0 +1,28 @@
+Fetching Forex
+  fx: 51 instruments, 0 updated, 2s
+  macro: no data for DGS2, FEDFUNDS, T10Y2Y
+  macro: 7 series (0 from an earlier run), Pakistan inflation 3.55
+  fx: 51 instruments, 63,745 bars, 2 of 5 sources ok (failed: yahoo_fx, fred, imf_inflation) in 35s
+Fetching Crypto
+  crypto: left out 184 thin trading, 30 stablecoin or pegged token, 2 unusual ticker, 1 ticker already used by a larger coin
+  crypto: 6 coin(s) had no candle source
+  crypto: global market figures: api.coingecko.com is being skipped for this run (rate limited)
+  crypto: 277 instruments (249 already current), 24 updated, 4 stale, 6 without data, 27s
+  crypto: 277 instruments, 186,420 bars, 7 of 7 sources ok in 27s
+Fetching Pakistan Stock Exchange
+  psx: portal unavailable: no node of the portal served data
+  psx: symbol list from the copy saved on 2026-10-23
+  psx: KSE100 from Yahoo: HTTP 404
+  psx: KSE100 could not be refreshed; using the stored history
+  psx: KMI30 could not be refreshed; using the stored history
+  psx: 30 stock(s) still have a one-day close-to-close move of more than 50% in their history: AHL 2023-05-30 x0.275, MIRKS 2023-06-01 x0.293, PGLC 2023-06-02 x0.295, JSMFETF 2023-05-31 x0.313, WAVESAPPR 2026-09-14 x0.353, AMTEX 2024-06-03 x2.79, SGPL 2025-02-04 x0.368, ALTN 2023-05-31 x0.397, MTL 2025-02-04 x0.401, LPL 2023-05-30 x0.403, BAFL 2025-02-04 x0.406, KSTM 2024-06-03 x2.43 ...
+  psx: 512 instruments, history 100%, 3 portal requests, 86s
+  psx: 512 instruments, 490,268 bars, 1 of 3 sources ok (failed: psx_portal, psx_yahoo) in 86s
+Acumen build 2026-10-24T20:54:54Z (live)
+  psx: analysed 495 of 495 instruments
+  fx: analysed 49 of 49 instruments
+  crypto: analysed 257 of 257 instruments
+  calibration: psx/short=unvalidated(10160), psx/medium=unvalidated(6125), psx/long=unvalidated(1715), fx/short=calibrated(1573), fx/medium=calibrated(926), fx/long=unvalidated(257), crypto/short=unvalidated(7398), crypto/medium=unvalidated(3444), crypto/long=unvalidated(951)
+  ideas: 160 (0 actionable)
+  wrote 810 files, 73.4 MB in 98s
+Done: 160 ideas (0 actionable), 810 files, 73.4 MB (not encrypted) in 98s -> site/data
