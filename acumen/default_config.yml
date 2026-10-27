@@ -146,6 +146,34 @@ valuation:
   fair_pe_default: 8.0          # fallback when a sector has too few peers to take a median
   margin_of_safety_buy: 0.20
 
+# ---------------------------------------------------------------- bargains: PSX shares priced far below a conservative fair value
+# Fair value here is the middle of three deliberately low yardsticks (see acumen/analysis/bargains.py), not the blend on a stock's page.
+# Like every threshold in this file these are fixed rules, not fitted to data: nothing about fundamentals can be back-tested point in time.
+bargains:
+  tiers: [50, 35, 20]           # % below fair value. 50 means a price of at most half of fair value: "a dollar for fifty cents"
+  watch_min_mos: 35             # a share at least this far below fair value that fails a check is shown, with its reasons
+  growth: 0.03                  # long-run growth in the peer P/E cap and the justified P/B: below inflation, so no real growth
+  max_roe_pct: 30               # the most return on equity the justified P/B credits, whatever the share earns today
+  min_models: 3                 # yardsticks that must all be computable (earnings power, peer P/E, justified P/B)
+  # checks that keep value traps out: failing any of them keeps a share off the list
+  min_pe: 1.5                   # a lower P/E is nearly always a one-off gain or a data error
+  min_pb: 0.15                  # a price below this share of book value is a data problem or a company in distress
+  roe_outlier_pct: 60           # a higher return on equity is not believable as a lasting level
+  max_eps_jump_pct: 300         # profit that quadrupled in a year is treated as a one-off
+  min_mcap: 2000000000          # PKR market value
+  min_free_float_pct: 10
+  max_drop_1m_pct: 20           # a price that fell this much in a month, or max_drop_3m_pct in three, may know what the accounts do not
+  max_drop_3m_pct: 35
+  max_debt_to_equity: 2.5       # not applied to banks, insurers and other lenders; ignored when the feed has no debt figure
+  max_price_gap: 0.25           # the price may differ this much from the price implied by the reported ratios, or from the last stored close
+  max_stale_days: 7             # days since the share last traded
+  # what a card tells you to expect
+  horizon_months: [12, 36]      # a typical wait for the gap to close; an assumption, not a forecast
+  review_drop_pct: 25           # re-read the accounts if the price falls this far below your purchase price
+  max_position_pct: 5           # of equity in any one of these: the model can be wrong
+  max_list: 25
+  max_excluded: 20
+
 # ---------------------------------------------------------------- portfolio profiles
 portfolio:
   profiles:
