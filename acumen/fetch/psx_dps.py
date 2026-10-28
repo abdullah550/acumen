@@ -4,8 +4,14 @@ The portal is the site's own back end. It is undocumented and can change without
 ``docs/psx-dps-ENDPOINTS.reference.md`` and ``docs/psx-dps-DISCOVERY.reference.md`` for what is known), so every parser
 here checks the shape of what it gets and raises :class:`ParseError` instead of guessing.
 
-Two quirks drive the design:
+Three quirks drive the design:
 
+* **The data routes want the page's own request token.** Since 2026-09-24 the portal answers ``403`` to a data request that
+  does not carry an ``X-Req-Id`` header equal to ``window.__ps._k``, a value every HTML page embeds (its own script does
+  ``$.ajaxSetup({headers: {"X-Req-Id": ps._k}})``). It rotates every few minutes. :meth:`Dps.refresh_token` reads it from
+  the front page, :meth:`Dps._call` sends it and, on a 403, reads a new one and tries once more. The token is the portal's
+  own, public and unauthenticated: this does what the portal's pages do. If a page ever carries no token the requests go
+  out without one (the mechanism may be removed again), and the data health line says so.
 * **Some nodes behind the host name do not serve the data routes** (they answer 404, or 403 when a browser-style
   header is sent) while serving ordinary pages, and DNS may advertise only such a node. :meth:`Dps.ensure_node`
   probes a small JSON route and, when the DNS answer is bad, tries other known addresses and pins the first one that
@@ -17,6 +23,7 @@ Two quirks drive the design:
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
 import socket
 from typing import Any, Callable
@@ -33,6 +40,24 @@ BASE = f"https://{HOST}"
 SEED_NODES = ["52.128.23.16"]
 SYMBOL_RX = re.compile(r"^[A-Z0-9]{1,12}$")
 MIN_ROWS_FOR_TRADING_DAY = 10
+TOKEN_HEADER = "X-Req-Id"
+TOKEN_PAGE = "/"  # any HTML page of the portal embeds the token; the front page is the lightest that always exists
+TOKEN_TTL_S = 150.0  # the portal rotates it about every five minutes: read a new one well before that
+_PS_RX = re.compile(r"window\.__ps\s*=\s*(\{.*?\})\s*(?:;|</script>)", re.DOTALL)
+_TOKEN_RX = re.compile(r"^[A-Za-z0-9_-]{16,}$")
+
+
+def parse_token(html: str) -> str | None:
+    """The request token (``window.__ps._k``) embedded in a portal page, or ``None`` when the page carries none."""
+    m = _PS_RX.search(html)
+    if m is None:
+        return None
+    try:
+        payload = json.loads(m.group(1))
+    except ValueError:
+        return None
+    tok = payload.get("_k") if isinstance(payload, dict) else None
+    return tok if isinstance(tok, str) and _TOKEN_RX.fullmatch(tok) else None
 
 _ALIASES = {
     "symbol": "symbol", "sector": "sector", "listedin": "listed", "listed": "listed", "ldcp": "ldcp", "open": "open", "high": "high", "low": "low",
@@ -171,11 +196,44 @@ class Dps:
         install_pinning(http)
         self.reprobes = 0
         self.node: str | None = None  # None = whatever DNS says
+        self.token: str | None = None  # the portal's request token (see the module note); None = none read, or the pages carry none
+        self.token_at: float | None = None  # when it was read, on the http client's clock; None = never
+        self.token_note: str | None = None  # why there is no token, for the data health line
+        self.token_reads = 0
+
+    # ------------------------------------------------------------------ the request token
+    def refresh_token(self) -> str | None:
+        """Read the request token from the portal's front page and remember it.
+
+        Keeps the token it already had when the page cannot be read (a network error says nothing about the token), and
+        forgets it when the page loads but carries none: the portal may have dropped the mechanism, and requests then go
+        out the way they did before it existed.
+        """
+        self.token_reads += 1
+        self.token_at = self.http.clock()  # one try per interval: a 403 on a data route forces the next one
+        try:
+            html = self.http.get(BASE + TOKEN_PAGE, retries=1, interval=0.5).text
+        except FetchError as exc:
+            self.token_note = f"the front page could not be read for the request token ({exc})"
+            return self.token
+        token = parse_token(html)
+        self.token = token
+        self.token_note = None if token else "the portal's pages carry no request token (window.__ps._k)"
+        return token
+
+    def auth_headers(self) -> dict[str, str]:
+        """The headers the portal's own scripts send on a data request, with a token no older than ``TOKEN_TTL_S``."""
+        if self.token_at is None or self.http.clock() - self.token_at > TOKEN_TTL_S:
+            self.refresh_token()
+        headers = {"X-Requested-With": "XMLHttpRequest", "Referer": BASE + "/"}
+        if self.token:
+            headers[TOKEN_HEADER] = self.token
+        return headers
 
     # ------------------------------------------------------------------ node handling
     def _probe(self) -> bool:
         try:
-            data = self.http.get(f"{BASE}/data/symbol-position", retries=0, interval=0.5).json()
+            data = self.http.get(f"{BASE}/data/symbol-position", headers=self.auth_headers(), retries=0, interval=0.5).json()
         except FetchError:
             return False
         return isinstance(data, list) and bool(data) and isinstance(data[0], dict) and "name" in data[0]
@@ -184,6 +242,7 @@ class Dps:
         """True when the portal's data routes answer. Pins an address when DNS hands out a node that does not serve them."""
         self.http.pins.pop(HOST, None)
         self.http.reset(HOST)
+        self.refresh_token()  # a data route answers 403 without it, which would look like a node that serves no data
         if self._probe():
             self.node = None
             return True
@@ -208,15 +267,28 @@ class Dps:
         return False
 
     def _call(self, method: str, path: str, **kw: Any):
-        try:
-            return self.http.request(method, BASE + path, **kw)
-        except HttpError as exc:
-            # 404/403 on a data route is the bad-node signature: look for a working node once or twice, then retry.
-            if exc.status in (403, 404) and self.reprobes < 2:
-                self.reprobes += 1
-                if self.ensure_node():
-                    return self.http.request(method, BASE + path, **kw)
-            raise
+        extra = dict(kw.pop("headers", None) or {})
+
+        def send():
+            return self.http.request(method, BASE + path, headers={**self.auth_headers(), **extra}, **kw)
+
+        new_token_tried = False
+        while True:
+            try:
+                return send()
+            except HttpError as exc:
+                if exc.status == 403 and not new_token_tried:
+                    # most likely the token has rotated (or was never read): read a new one and ask once more
+                    new_token_tried = True
+                    self.http.reset(HOST)  # a 403 counts against the host; this one is being dealt with
+                    if self.refresh_token():
+                        continue
+                # 404/403 on a data route is the bad-node signature: look for a working node once or twice, then retry.
+                if exc.status in (403, 404) and self.reprobes < 2:
+                    self.reprobes += 1
+                    if self.ensure_node():
+                        return send()
+                raise
 
     # ------------------------------------------------------------------ routes
     def symbols(self) -> list[dict[str, Any]]:

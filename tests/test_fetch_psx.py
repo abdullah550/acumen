@@ -191,7 +191,7 @@ def test_bonus_issue_exactly_at_the_backward_junction_is_adjusted(tmp_path):
     junction_day = base.dates[-30]  # the oldest day the first (budget-limited) run reaches
     w = world(days=90, bonus={("TST05", junction_day): 1 / 1.25})
     store = HistoryStore(tmp_path)
-    cfg = config(years=0.5, max_requests_per_run=33)
+    cfg = config(years=0.5, max_requests_per_run=34)  # 30 days, the node probe, the symbol list, the market watch and one read of the front page (the request token)
 
     md1, s1, _ = go(w, store, cfg=cfg)
     assert len(hist_days(s1)) == 30 and state(store)["first_date"] == junction_day.isoformat()
@@ -642,7 +642,7 @@ def test_older_days_are_scaled_by_the_events_that_followed_them(tmp_path):
         ("TST09", d[-60]): 0.8,  # one exactly at the second seam
     }
     w = world(days=90, bonus=events)
-    cfg = config(years=0.5, max_requests_per_run=33)  # 30 days a run: three runs reach the first day
+    cfg = config(years=0.5, max_requests_per_run=34)  # 30 days a run (plus the portal's list, market watch, probe and token page): three runs reach the first day
     store = HistoryStore(tmp_path / "steps")
     md = None
     for _ in range(3):

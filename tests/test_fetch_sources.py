@@ -141,6 +141,98 @@ def test_dps_gives_up_re_probing_after_two_tries():
     assert sess.count("symbol-position") <= 2 * (1 + len(D.SEED_NODES))  # bounded, not one probe round per failure
 
 
+# ------------------------------------------------------------------------------------------------ the portal's request token
+TOKEN_PAGE = '<html><head><script>window.__ps = {"_k": "%s", "lc": "en", "rv": 3, "tz": "Asia/Karachi"};</script></head><body></body></html>'
+TOKEN_A, TOKEN_B = "ovC1yAQm9-8H2Zf3kLx0RtPwUe5JdGhNsB7aVcXy1M_", "Zq4mN8xW2cV7bB1nM5kL9jH3gF6dS0aP-tR_yUeIoQw"
+
+
+def test_parse_token_reads_the_value_the_pages_embed_and_nothing_else():
+    assert D.parse_token(TOKEN_PAGE % TOKEN_A) == TOKEN_A
+    assert D.parse_token('<script>window.__ps={"_k":"%s"}</script>' % TOKEN_A) == TOKEN_A  # no spaces, no semicolon
+    assert D.parse_token("<html>no block</html>") is None
+    assert D.parse_token("<script>window.__ps = {not json};</script>") is None
+    assert D.parse_token('<script>window.__ps = {"lc": "en"};</script>') is None
+    assert D.parse_token(TOKEN_PAGE % "short") is None  # too short to be a token
+    assert D.parse_token(TOKEN_PAGE % "has spaces in it, so it is not a token") is None
+
+
+def _front_page_reads(sess) -> int:
+    return sess.count(r"dps\.psx\.com\.pk/$")
+
+
+def test_dps_sends_the_front_page_token_on_every_data_route():
+    w = World(n=24, days=3)
+    w.token = TOKEN_A
+    sess = w.session()
+    dps = D.Dps(client(sess), interval=0)
+    assert len(dps.symbols()) == 25
+    assert len(dps.market_watch()) == 24
+    assert len(dps.day(w.dates[-1])) == 24
+    assert len(dps.eod("TST00")) == 3
+    data_calls = [c for c in sess.calls if not c["url"].endswith("psx.com.pk/")]
+    assert len(data_calls) == 4
+    assert all(c["headers"]["X-Req-Id"] == TOKEN_A and c["headers"]["X-Requested-With"] == "XMLHttpRequest" for c in data_calls)
+    assert _front_page_reads(sess) == 1  # one read of the front page served all four
+
+
+def test_dps_reads_a_new_token_when_the_portal_refuses_the_old_one():
+    w = World(n=24, days=3)
+    w.token = TOKEN_A
+    sess = w.session()
+    dps = D.Dps(client(sess), interval=0)
+    assert len(dps.symbols()) == 25
+    w.token = TOKEN_B  # the portal rotated it
+    assert len(dps.day(w.dates[-1])) == 24  # refused once, a new token read, asked again
+    assert dps.token == TOKEN_B and sess.count("historical") == 2 and _front_page_reads(sess) == 2
+    assert len(dps.market_watch()) == 24 and _front_page_reads(sess) == 2  # and the new one is kept
+
+
+def test_dps_reads_a_fresh_token_before_the_old_one_can_run_out():
+    w = World(n=24, days=3)
+    w.token = TOKEN_A
+    sess = w.session()
+    clock = FakeClock()
+    dps = D.Dps(Client("T/1", session=sess, sleep=clock.sleep, clock=clock, default_interval=0.0), interval=0)
+    dps.symbols()
+    clock.now += D.TOKEN_TTL_S + 1
+    w.token = TOKEN_B
+    assert len(dps.day(w.dates[-1])) == 24
+    assert sess.count("historical") == 1 and _front_page_reads(sess) == 2  # no refusal needed: the token was renewed on age
+
+
+def test_dps_still_works_when_the_pages_carry_no_token_and_says_so():
+    w = World(n=24, days=3)  # no token: the pages embed none and the routes do not ask for one
+    sess = w.session()
+    dps = D.Dps(client(sess), interval=0)
+    assert len(dps.symbols()) == 25 and len(dps.day(w.dates[-1])) == 24
+    assert all("X-Req-Id" not in (c["headers"] or {}) for c in sess.calls)
+    assert dps.token is None and "no request token" in dps.token_note
+
+
+def test_dps_carries_on_when_the_front_page_cannot_be_read_and_keeps_the_token_it_has():
+    w = World(n=24, days=3)
+    sess = w.session()
+    dps = D.Dps(client(sess), interval=0)
+    sess.routes.insert(0, ("GET", __import__("re").compile(r"dps\.psx\.com\.pk/$"), requests.ConnectionError("boom")))
+    assert len(dps.symbols()) == 25  # the routes do not ask for a token in this world, so the failed page read costs nothing
+    assert dps.token is None and "could not be read" in dps.token_note
+    dps.token, dps.token_at = TOKEN_A, None  # a token from an earlier read survives a failed renewal
+    dps.refresh_token()
+    assert dps.token == TOKEN_A
+
+
+def test_dps_stops_asking_when_even_a_fresh_token_is_refused():
+    w = World(n=24, days=3)
+    w.token = TOKEN_A
+    sess = w.session()
+    sess.routes.insert(0, ("GET", __import__("re").compile(r"dps\.psx\.com\.pk/symbols"), FakeResponse(403, b"")))
+    dps = D.Dps(client(sess), interval=0, resolver=lambda: [])
+    with pytest.raises(HttpError) as err:
+        dps.symbols()
+    assert err.value.status == 403
+    assert sess.count(r"dps\.psx\.com\.pk/symbols") <= 4 and _front_page_reads(sess) <= 4  # bounded: a new token once, a node search twice at most
+
+
 # ------------------------------------------------------------------------------------------------ TradingView
 def test_tradingview_drops_columns_it_does_not_know_and_asks_again():
     w = World(n=24, days=3)

@@ -67,6 +67,7 @@ class World:
         self.missing_days: set[dt.date] = set()  # days the history route wrongly returns empty (outage-like)
         self.lagging: set[dt.date] = set()  # days the history route has not published yet although the live market watch has them
         self.cutoff: dt.date | None = None  # the portal does not know days after this one (lets a test reveal data day by day)
+        self.token: str | None = None  # when set, the data routes want this as X-Req-Id (403 otherwise) and every page embeds it, as the real portal does
         px = {s: float(self.rng.uniform(20, 400)) for s in self.symbols}
         for d in self.dates:
             day = {}
@@ -133,8 +134,16 @@ class World:
             def f(call):
                 if not served():
                     return FakeResponse(404, b"<html>not found</html>")
+                if self.token is not None and (call.get("headers") or {}).get("X-Req-Id") != self.token:
+                    return FakeResponse(403, b"")
                 return make(call)
             return f
+
+        def front(call):  # every node serves the pages, whether or not it serves the data routes
+            block = '<script>window.__ps = {"_k": "%s", "lc": "en", "rv": 3, "tz": "Asia/Karachi"};</script>' % self.token if self.token else ""
+            return ok(f"<!DOCTYPE html><html><head>{block}</head><body>data portal</body></html>")
+
+        s.get(r"dps\.psx\.com\.pk/$", front)
 
         s.get(r"dps\.psx\.com\.pk/data/symbol-position", guard(lambda c: ok([{"name": "ADV", "value": 0.4}, {"name": "DEC", "value": 0.5}])))
         s.get(r"dps\.psx\.com\.pk/symbols", guard(lambda c: ok(self.symbols_json())))

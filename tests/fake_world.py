@@ -29,6 +29,7 @@ class Worlds:
     def __init__(self, today: dt.date = FRI, hour: int = 12, minute: int = 30, psx_symbols: int = 24, psx_days: int = 330):
         # Friday 17:30 in Pakistan: the PSX session is final; forex and crypto have their last complete day on Thursday.
         self.psx = World(n=psx_symbols, days=psx_days, end=dt.date(2026, 10, 16))
+        self.psx.token = "tok_" + "A1" * 20  # the portal asks for its request token, as it has since 2026-09-24
         self.fx = FxWorld()
         self.crypto = CryptoWorld()
         self.macro = MacroWorld()

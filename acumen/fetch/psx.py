@@ -456,9 +456,9 @@ def fetch_psx(
             universe = {s["symbol"]: s for s in syms if not s["is_debt"] and "-" not in s["symbol"]}
             dps_ok = True
         else:
-            statuses.append(status("psx_portal", False, "no node of the portal served data", started=t0, now=now))
+            statuses.append(status("psx_portal", False, "no node of the portal served data" + (f" ({dps.token_note})" if dps.token_note else ""), started=t0, now=now))
     except FetchError as exc:
-        statuses.append(status("psx_portal", False, str(exc), started=t0, now=now))
+        statuses.append(status("psx_portal", False, str(exc) + (f" ({dps.token_note})" if dps.token_note else ""), started=t0, now=now))
     if not dps_ok:
         log(f"  psx: portal unavailable: {statuses[-1].message}")
 

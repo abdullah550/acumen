@@ -96,6 +96,9 @@ Agent (curl, browser and httpx UAs behave identically), not cookies, not the
 
 ### There is no WAF blocking us
 
+> **Superseded by [§ 7](#7-the-request-token-what-the-bad-node-really-was).** The 403/404 pattern described here was the portal's request
+> token being switched on node by node, not a node that "serves no data".
+
 Worth stating plainly, because the symptoms invite the opposite conclusion.
 
 An early run sent `X-Requested-With: XMLHttpRequest` and got an empty `403`
@@ -162,3 +165,27 @@ or two — see below.
   +05:00); using the host's local timezone shifts the dates.
 - A weekend or holiday `POST /historical` returns a near-empty body, not an
   error.
+
+## 7. The request token: what the "bad node" really was
+
+From 2026-10-23 no address served the data routes to GitHub's servers any more: `.6` answered 404/403, `.16` answered 502 "Performing
+Maintenance", and the history stopped. Published PSX libraries (psxdata 1.2.0 and others) had meanwhile reported that the portal
+began, on 2026-09-24, to refuse data requests without an `X-Req-Id` header. A probe from a GitHub runner on 2026-10-28 settled it.
+Calls made as the portal's own pages make them, with the same headers, differing only in the token:
+
+| Request | no `X-Req-Id` | `X-Req-Id: <window.__ps._k>` |
+|---|---|---|
+| `GET /data/symbol-position`, `/symbols`, `/timeseries/eod/{SYM}`, `/timeseries/int/{SYM}` | 403, empty | 200 JSON |
+| `GET /market-watch`, `/trading-board/REG/main` | 403, empty | 200 HTML table |
+| `POST /historical` (one day, or one symbol-month) | 403, empty | 200 HTML table |
+| `GET /`, `/indices`, `/company/{SYM}` | 200 | 200 |
+
+The same on `52.128.23.6`, `52.128.23.16` and whatever DNS returned; no other address of `52.128.23.0/24` answers for the name. So there
+was no bad node: the token rolled out node by node (which is why the 2026-09-29 notes saw one node asking for it and one not), and
+`.16`'s 502 was a node being serviced.
+
+Where the token comes from. Every page embeds `<script>window.__ps = {"_k": "<43 URL-safe characters>", "lc": ..., "rv": ..., "tz": ...};</script>`,
+and the site's script does `$.ajaxSetup({headers: {"X-Req-Id": window.__ps._k}})`, so every AJAX call carries it. It is public (anyone who
+loads the front page gets it) and it rotates every few minutes, so it is read again when it is older than `TOKEN_TTL_S` (150 s) and
+whenever a data route answers 403. `psx_dps.Dps` does this; if a page ever carries no token the requests go out without one and the data
+health line says "the portal's pages carry no request token", in case the mechanism is removed again.

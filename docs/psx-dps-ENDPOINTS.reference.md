@@ -4,11 +4,13 @@ Base: `https://dps.psx.com.pk` — everything below is unauthenticated.
 Undocumented and unversioned; PSX can change any of it without notice.
 
 **Before you call these directly**, read
-[DISCOVERY.md § 3](DISCOVERY.md#3-then-every-data-endpoint-returned-404): a
-plain request to any of these has a good chance of returning 404 purely
-because of which node DNS handed you. That is not a dead endpoint.
+[DISCOVERY.md § 7](DISCOVERY.md#7-the-request-token-what-the-bad-node-really-was): every data route (the JSON ones,
+`/market-watch`, `/trading-board/...` and `POST /historical`) answers an empty `403` unless the request carries
+`X-Req-Id: <token>`, where the token is `window.__ps._k` from any HTML page of the portal (the front page will do; it
+rotates about every five minutes). Full pages such as `/`, `/indices` and `/company/{SYM}` need no token. An older note
+here put 403/404 answers down to a "bad node": that was this mechanism arriving node by node.
 
-Verified live on 2026-09-29.
+Verified live on 2026-10-28, with the token, on both known nodes (`52.128.23.6`, `52.128.23.16`).
 
 ## JSON
 
@@ -40,6 +42,7 @@ on date columns `data-order` is an epoch and the cell text is the date.
 
 | Endpoint | Returns |
 |---|---|
+| `GET /trading-board/{REG\|ODL\|DFC\|SQR\|CSF}/{main\|gem\|bnb}` | One market board, live, with bid/offer columns (REG/main ~380 KB) |
 | `GET /market-watch` | Every trading symbol, ~496 rows, ~475 KB. Columns via `data-name`: `symbol, sector, listed, ldcp, open, high, low, close, change, percentChange, volume, obq, obc, osq, osc` |
 | `GET /indices` | All index levels: index, high, low, current, change, % change |
 | `GET /indices/{CODE}` | Constituents with weights. `KSE100`, `KSE30`, `KMI30`, `ALLSHR`, `KMIALLSHR`, `KSE100PR` |

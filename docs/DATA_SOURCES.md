@@ -27,7 +27,12 @@ connection but refuse GitHub's servers, or the other way round, so run it from b
 
 How it can fail and what happens:
 
-* **Some servers behind the portal's name do not serve the data routes** (they answer 404 although the site is up). Acumen probes a small route first and, when
+* **The data routes want the page's own request token.** Since 2026-09-24 the portal answers an empty 403 to a data request unless it carries an `X-Req-Id` header
+  equal to `window.__ps._k`, a value every one of its pages embeds (its own script sends it the same way). It rotates about every five minutes. Acumen reads it
+  from the front page, sends it on every data request, reads a new one when it ages or when a request is refused, and carries on without one if the pages ever stop
+  carrying it. This was the cause of the PSX outage from 2026-10-23 to 2026-10-28: the portal had not changed its routes, the requests simply had no token. The
+  doctor's "PSX data portal: request token" line shows whether it is still found.
+* **Some servers behind the portal's name may not serve the data routes** (they answer 404 although the site is up). Acumen probes a small route first and, when
   the address DNS gives is bad, tries other known addresses and pins the first that works. The certificate is still checked for the real name.
 * **Rate limits.** Requests are spaced `data.psx.min_interval_s` (1.2 s) apart. When the host starts refusing, Acumen stops asking for the rest of the run and
   continues next run. A first full backfill therefore takes several runs for the oldest years; the newest year, which matters most, comes first.

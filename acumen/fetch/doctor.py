@@ -111,10 +111,18 @@ def _dps(ctx: Ctx) -> dps_mod.Dps:
     return ctx.memo["dps"]
 
 
+def check_psx_token(ctx: Ctx) -> str:
+    d = _dps(ctx)
+    token = d.refresh_token()
+    if not token:
+        raise Problem(d.token_note or "no request token could be read")
+    return f"the front page carries a request token ({len(token)} characters), sent as {dps_mod.TOKEN_HEADER} on every data request"
+
+
 def check_psx_portal(ctx: Ctx) -> str:
     d = _dps(ctx)
     if not d.ensure_node():
-        raise Problem("the portal's data routes do not answer on any known address")
+        raise Problem("the portal's data routes do not answer on any known address" + (f" ({d.token_note})" if d.token_note else ""))
     rows = d.symbols()
     ctx.memo["psx_symbols"] = rows
     equities = [r for r in rows if not r["is_etf"] and not r["is_debt"]]
@@ -330,6 +338,7 @@ def check_macro_inflation(ctx: Ctx) -> str:
 def checks() -> list[Check]:
     c = Check
     return [
+        c("psx.token", "psx", "PSX data portal: request token", check_psx_token, False, "data requests go out without one, which works only while the portal does not ask for it"),
         c("psx.portal", "psx", "PSX data portal: share list", check_psx_portal, True),
         c("psx.eod", "psx", "PSX data portal: price history", check_psx_eod, True, "history comes from Yahoo (.KA symbols) when it is up"),
         c("psx.day", "psx", "PSX data portal: a past session", check_psx_day, False, "daily bars are then built from the portal's price history only"),
