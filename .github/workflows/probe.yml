@@ -1,0 +1,32 @@
+# Temporary: which sources give live prices from GitHub's servers. Deleted once the answer is used.
+name: Probe live price sources
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_live.py"
+      - ".github/workflows/probe.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - run: pip install -r requirements.txt
+      - name: Ask
+        shell: bash
+        run: PYTHONPATH=. python scripts/probe_live.py 2>&1 | tee probe.txt
+      - name: Keep the answer
+        if: always()
+        run: bash scripts/keep_report.sh report-probe probe.txt
