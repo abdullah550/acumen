@@ -1,0 +1,24 @@
+Fetching Forex
+  fx: 1 pair(s) have no bars from the last few days: USDCNH
+  fx: 51 instruments, 0 updated, 2s
+  macro: no data for DGS2, FEDFUNDS, T10Y2Y
+  macro: 7 series (0 from an earlier run), Pakistan inflation 3.55
+  fx: 51 instruments, 63,990 bars, 2 of 5 sources ok (failed: yahoo_fx, fred, imf_inflation) in 34s
+Fetching Crypto
+  crypto: left out 202 thin trading, 30 stablecoin or pegged token, 3 unusual ticker, 1 ticker already used by a larger coin
+  crypto: 9 coin(s) had no candle source
+  crypto: global market figures: api.coingecko.com is being skipped for this run (rate limited)
+  crypto: 255 instruments (226 already current), 12 updated, 17 stale, 9 without data, 27s
+  crypto: 255 instruments, 176,728 bars, 6 of 7 sources ok (failed: coinbase) in 27s
+Fetching Pakistan Stock Exchange
+  psx: 11 stock(s) still have a one-day close-to-close move of more than 50% in their history: AMTEX 2024-06-03 x2.79, KSTM 2024-06-03 x2.43, PASL 2024-06-07 x2.14, CLCPS 2024-06-06 x2, GSPM 2024-05-30 x1.93, GUSM 2024-05-30 x1.71, DWTM 2022-03-24 x1.62, FCSC 2024-09-13 x1.59, HIRAT 2024-04-30 x1.59, BELA 2023-11-20 x1.58, ICIBL 2025-06-02 x1.57
+  psx: 513 instruments, history 100%, 6 portal requests, 25s
+  psx: 513 instruments, 485,679 bars, 2 of 2 sources ok in 25s
+Acumen build 2026-10-31T21:40:53Z (live)
+  psx: analysed 493 of 493 instruments
+  fx: analysed 49 of 49 instruments
+  crypto: analysed 243 of 243 instruments
+  calibration: psx/short=unvalidated(10669), psx/medium=unvalidated(6223), psx/long=unvalidated(1737), fx/short=calibrated(1576), fx/medium=calibrated(929), fx/long=unvalidated(258), crypto/short=unvalidated(7004), crypto/medium=unvalidated(3319), crypto/long=unvalidated(907)
+  ideas: 164 (0 actionable)
+  wrote 794 files, 72.2 MB in 55s
+Done: 164 ideas (0 actionable), 794 files, 72.2 MB (not encrypted) in 55s -> site/data
