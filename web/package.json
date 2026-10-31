@@ -8,7 +8,7 @@
     "build": "node build.mjs",
     "build:inline": "node build.mjs --inline",
     "dev": "node build.mjs --watch",
-    "test": "node --test test/health.test.mjs"
+    "test": "node --test test/health.test.mjs test/live.test.mjs"
   },
   "dependencies": {
     "lightweight-charts": "5.2.1"

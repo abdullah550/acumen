@@ -6,7 +6,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "scripts/probe_live.py"
+      - "scripts/probe_live.mjs"
+      - "web/src/lib/livecore.js"
       - ".github/workflows/probe.yml"
 
 permissions:
@@ -18,15 +19,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: requirements.txt
-      - run: pip install -r requirements.txt
+          node-version: "22"
       - name: Ask
         shell: bash
-        run: PYTHONPATH=. python scripts/probe_live.py 2>&1 | tee probe.txt
+        run: node scripts/probe_live.mjs 2>&1 | tee probe.txt
       - name: Keep the answer
         if: always()
         run: bash scripts/keep_report.sh report-probe probe.txt
