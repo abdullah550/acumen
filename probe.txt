@@ -1,0 +1,30 @@
+probe at 2026-10-31T18:14:18.268Z
+PSX
+  pakistan/scan: HTTP 200, 1106 bytes, 183 ms, 22 tickers asked
+  19 of 22 priced
+    PSX:KSE100: {"px":166409.2521,"chg":-0.4690289348599218}
+    PSX:HBL: {"px":291.55,"chg":-1.135978297728032}
+    PSX:ACIETF: — no price
+    PSX:MIIETF: — no price
+FX
+  global/scan: HTTP 200, 3504 bytes, 46 ms, 74 tickers asked
+  26 of 26 priced; missing: none
+    FX:EURUSD: {"px":1.11577,"chg":-0.16821008365768386}
+    FX:USDPKR: {"px":276.44,"chg":-0.003617290649300382}
+    FX:XAUUSD: {"px":3875.085,"chg":-3.631771522532387}
+    FX:XAGUSD: {"px":49.115,"chg":-5.810720107392848}
+    FX:EURPKR: {"px":308.4434588,"chg":-0.1718212896593574}
+    FX:JPYPKR: {"px":1.75428824,"chg":0.09101651002199063}
+    FX:AEDPKR: {"px":75.27297481279783,"chg":-0.003617290649300382}
+Crypto, first request (every venue for every coin)
+  crypto/scan: HTTP 200, 6648 bytes, 40 ms, 120 tickers asked
+  20 of 20 priced; no price: none
+  venues: {"BTC":"BINANCE:BTCUSDT","ETH":"BINANCE:ETHUSDT","BNB":"BINANCE:BNBUSDT","XRP":"BINANCE:XRPUSDT","SOL":"BINANCE:SOLUSDT","TRX":"BINANCE:TRXUSDT","DOGE":"BINANCE:DOGEUSDT","ADA":"BINANCE:ADAUSDT"}
+    CRYPTO:BTC: {"px":77725.8,"chg":0.4598551816136617}
+    CRYPTO:ETH: {"px":2257.85,"chg":0.5464067189768337}
+    CRYPTO:XMR: {"px":595.92,"chg":1.5040283431841672}
+    CRYPTO:ONE: {"px":0.001182,"chg":-0.7556675062972202}
+    CRYPTO:AI: {"px":0.0179,"chg":1.129943502824852}
+Crypto, second request (the venue that answered, per coin)
+  crypto/scan: HTTP 200, 1369 bytes, 39 ms, 20 tickers asked
+  20 of 20 priced
