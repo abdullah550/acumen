@@ -2,8 +2,8 @@
    - App shell: cache first (versioned by build hash).
    - data/meta.json: network first, fall back to the last copy.
    - other data files: stale-while-revalidate keyed by their ?v= version, so a new refresh is picked up immediately. */
-const BUILD = '4b7f5cdff2';
-const CORE = ["./","index.html","app.js?v=4b7f5cdff2","app.css?v=4b7f5cdff2","manifest.webmanifest"];   // the app cannot start without these: if one is missing the install fails and is retried
+const BUILD = 'cbffa5d1de';
+const CORE = ["./","index.html","app.js?v=cbffa5d1de","app.css?v=cbffa5d1de","manifest.webmanifest"];   // the app cannot start without these: if one is missing the install fails and is retried
 const EXTRA = ["icons/icon.svg","icons/icon-192.png","icons/icon-512.png","icons/apple-touch-icon.png","fonts/ibm-plex-sans-latin-400-normal.woff2","fonts/ibm-plex-sans-latin-500-normal.woff2","fonts/ibm-plex-sans-latin-600-normal.woff2","fonts/ibm-plex-mono-latin-400-normal.woff2","fonts/ibm-plex-mono-latin-500-normal.woff2"]; // icons and fonts: cached when available, but never allowed to block the install
 const SHELL_CACHE = 'acumen-shell-' + BUILD;
 const DATA_CACHE = 'acumen-data-v1';

@@ -29,10 +29,22 @@ export default async function render() {
   cleanups.push(strip.destroy);
   root.append(strip.el);
 
-  // alerts
-  const alerts = (ov.alerts || []);
+  // alerts: sources that failed on the last refresh are folded into one line (Data health lists each with its message)
+  const alerts = (ov.alerts || []).slice(0, 4);
   if (alerts.length) {
-    root.append(h('div', { class: 'stack tight' }, ...alerts.slice(0, 4).map(a => banner(a.level === 'warn' ? 'warn' : 'info', a.text))));
+    const isSource = a => /^Source /.test(a.text || '');
+    const failed = alerts.filter(isSource);
+    const lines = [];
+    let grouped = false;
+    for (const a of alerts) {
+      if (!isSource(a)) { lines.push(banner(a.level === 'warn' ? 'warn' : 'info', a.text)); continue; }
+      if (grouped) continue;
+      grouped = true;
+      const more = h('a', { ...linkProps('/settings') }, 'Details');
+      lines.push(failed.length === 1 ? banner('warn', a.text, ' ', more)
+        : banner('warn', `${failed.length} data sources had a problem on the last refresh: ${failed.map(f => f.text.replace(/^Source ([^:]+):.*$/, '$1')).join(', ')}. `, more));
+    }
+    root.append(h('div', { class: 'stack tight' }, ...lines));
   }
 
   // best ideas

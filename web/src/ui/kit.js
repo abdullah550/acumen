@@ -35,7 +35,8 @@ export function actionChip(action, research = false) {
 export const researchChip = () => h('span', { class: 'chip outline research', title: 'Not actionable: a plan worth studying, not a recommendation' }, icon('info'), 'Research only');
 
 export function chgSpan(x, d = 1, opt = {}) {
-  const cls = F.dirClass(x);
+  // a change that rounds to zero is shown flat, not as a red or green move
+  const cls = opt.text == null && F.isNum(x) && Math.abs(x) < 0.5 * 10 ** -d ? 'flat' : F.dirClass(x);
   const arrow = cls === 'up' ? s('svg', { viewBox: '0 0 10 10', width: 9, height: 9, 'aria-hidden': 'true' }, s('path', { d: 'M5 1.2 9 8H1z', fill: 'currentColor' }))
     : cls === 'down' ? s('svg', { viewBox: '0 0 10 10', width: 9, height: 9, 'aria-hidden': 'true' }, s('path', { d: 'M5 8.8 1 2h8z', fill: 'currentColor' })) : null;
   return h('span', { class: ['chg', cls, opt.cls] }, opt.noArrow ? null : arrow, opt.text != null ? opt.text : F.pct(x, d, { sign: opt.sign !== false }));
