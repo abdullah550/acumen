@@ -9,6 +9,7 @@ import { card, banner, seg, chip, mkChip, chgSpan, sparkline, stat, explain, emp
 import { ideaCard } from '../ui/ticket.js';
 import { gauge, stackBar, heatTiles, hbars, treemap, divColor, tipRows } from '../ui/charts.js';
 import { macroTile } from '../ui/macro.js';
+import { pulseStrip } from '../ui/pulse.js';
 import { breadthBlock } from '../ui/market.js';
 import { pageHead, sectionTitle, rankIdeas, errorBlock } from './common.js';
 
@@ -22,6 +23,11 @@ export default async function render() {
   const meta = D.meta;
   root.append(pageHead('Command Center', 'What looks best across Pakistan, forex and crypto right now, with entries, stops, targets and timelines.',
     h('a', { class: 'btn', ...linkProps('/ideas') }, icon('bolt'), 'All trade ideas')));
+
+  // key prices, live while the app is open
+  const strip = pulseStrip();
+  cleanups.push(strip.destroy);
+  root.append(strip.el);
 
   // alerts
   const alerts = (ov.alerts || []);

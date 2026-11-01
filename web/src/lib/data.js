@@ -136,7 +136,9 @@ class DataStore {
   async refreshPrices() {
     this.cache.delete('prices');
     try { await this.loadMeta(); } catch { /* keep old meta */ }
-    return this.get('prices');
+    const prices = await this.get('prices');
+    if (typeof this.onPrices === 'function') this.onPrices(prices); // lets live prices lay themselves over the reloaded table
+    return prices;
   }
 
   // --- derived lookups (built lazily from instruments) ---

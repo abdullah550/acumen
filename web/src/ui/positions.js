@@ -2,6 +2,7 @@ import { h, clear, download } from '../lib/dom.js';
 import { icon } from '../lib/icons.js';
 import * as F from '../lib/fmt.js';
 import { D } from '../lib/data.js';
+import { Live } from '../lib/live.js';
 import { S } from '../lib/store.js';
 import * as J from '../lib/journal.js';
 import * as Z from '../lib/sizing.js';
@@ -237,7 +238,7 @@ export function journalView({ onChange = () => {} } = {}) {
 
   async function refreshPrices(btn) {
     btn.disabled = true;
-    try { await D.refreshPrices(); toast('Prices refreshed'); } catch { toast('Could not refresh prices. Showing the last ones.'); }
+    try { await D.refreshPrices(); await Live.refresh(); toast('Prices refreshed'); } catch { toast('Could not refresh prices. Showing the last ones.'); }
     btn.disabled = false;
     draw();
   }
@@ -245,9 +246,13 @@ export function journalView({ onChange = () => {} } = {}) {
   function head(open) {
     const p = D.peek('prices');
     const asof = p && p.generated_at;
+    const st = Live.status();
+    const liveAt = Math.max(0, ...Object.values(st.markets).map(m => m.at || 0));
+    const note = open.length && st.on && liveAt ? `Live prices${st.markets.psx.at ? ' (PSX 15 min delayed)' : ''}, updated ${F.ago(new Date(liveAt).toISOString())}. Saved on this device only.`
+      : open.length && asof ? `Prices as of ${F.dateTime(asof)} (${F.ago(asof)}). Saved on this device only.` : 'Saved on this device only. Use Export to back it up or move it to another device.';
     const rf = h('button', { class: 'btn sm', type: 'button', onclick: e => refreshPrices(e.currentTarget) }, icon('refresh'), 'Refresh prices');
     return h('div', { class: 'row wrap between', style: { gap: '10px' } },
-      h('div', { class: 'muted fs-xs' }, open.length && asof ? `Prices as of ${F.dateTime(asof)} (${F.ago(asof)}). Saved on this device only.` : 'Saved on this device only. Use Export to back it up or move it to another device.'),
+      h('div', { class: 'muted fs-xs' }, note),
       h('div', { class: 'row wrap', style: { gap: '8px' } }, open.length ? rf : null,
         h('button', { class: 'btn sm primary', type: 'button', onclick: () => openPositionForm({ onDone: redraw }) }, icon('plus'), 'Add a position'), ...backupButtons(redraw)));
   }
@@ -379,6 +384,18 @@ export function journalView({ onChange = () => {} } = {}) {
     root.append(h('p', { class: 'fineprint' }, 'Results use the latest downloaded prices, not your broker’s fills, and ignore commissions, taxes and financing. Compare with your broker statements.',
       explain('Acumen cannot see your brokerage account. Positions here are what you typed in. “Result” is price change × quantity, converted to your account currency with the latest rate in the data.')));
   }
+
+  // Live prices arrive every minute: redraw when one of the open positions moved. Forms and sheets live outside `root`, so typing is not disturbed.
+  let attached = false;
+  const onLive = ev => {
+    if (!root.isConnected) { if (attached) window.removeEventListener('acumen:live', onLive); return; }
+    attached = true;
+    const ids = (ev.detail && ev.detail.ids) || [];
+    if (!ids.length) return;
+    const open = new Set(J.list().filter(t => t.status === 'open').map(t => t.idea));
+    if (ids.some(id => open.has(id))) draw();
+  };
+  window.addEventListener('acumen:live', onLive);
 
   draw();
   return { el: root, redraw: draw };

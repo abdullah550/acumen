@@ -125,6 +125,23 @@
 .fresh { text-decoration: none !important; gap: 6px; }
 .fresh .dot { width: 6px; height: 6px; }
 @media (max-width: 760px) { .fresh { display: none; } }
+.live-chip { gap: 6px; text-decoration: none !important; white-space: nowrap; }
+.live-chip .dot { width: 6px; height: 6px; }
+.dot.live { background: var(--good); animation: breathe 2.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .dot.live { animation: none; } }
+
+.notice-host:empty { display: none; }
+.update-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; padding: 8px 16px; font-size: var(--fs-sm); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); border-bottom: 1px solid var(--line); }
+
+.pulse { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--s-3); }
+.pulse[hidden] { display: none; }
+.pulse-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: var(--s-3) var(--s-4); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); color: var(--ink); text-decoration: none; }
+.pulse-tile:hover { background: var(--surface-2); text-decoration: none; }
+.pulse-tile .pt-l { font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.pulse-tile .pt-v { font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.pulse-tile .pt-c { font-size: var(--fs-sm); font-weight: 600; }
+.pulse-tile .pt-s { font-size: var(--fs-xs); color: var(--ink-3); }
+.pulse-tile .dot { width: 6px; height: 6px; }
 
 /* ---------- Command center ---------- */
 .sec-head { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s-4); flex-wrap: wrap; }

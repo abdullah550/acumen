@@ -33,7 +33,7 @@ services. Run **Check data sources** (below) before you trust a number. The data
 
 | Screen | What it is for |
 |---|---|
-| **Command Center** | One page: market regimes, how many ideas are actionable and why not, the best ideas, data health, the macro backdrop. |
+| **Command Center** | One page: live key prices, market regimes, how many ideas are actionable and why not, the best ideas, data health, the macro backdrop. |
 | **Trade Ideas** | Every idea with entry, stop, two targets (and how much to close at each), reward to risk, estimated chance and time to reach each target, conviction grade, position size for your equity and risk profile, and the reasons or blockers. |
 | **Screener** | Filter and sort every instrument by score, trend, momentum, valuation, liquidity, sector. |
 | **Instrument** | Chart with levels and the plan, scores by factor, technicals, fundamentals and valuation (stocks), risk, the back-test with out-of-sample results, peers. |
@@ -112,6 +112,7 @@ After the first load it also opens offline, with the data of the last refresh.
 
 ## Using it
 
+* **Live prices.** While the app is open it asks TradingView's public screener for current prices (once a minute per open market) and shows them on the instrument page, in your positions and on the Command Center strip. **PSX is 15 minutes behind the exchange; forex and crypto stream.** The analysis itself (scores, ideas, entries, stops, targets) still updates with each refresh. If the feed cannot be reached the app shows the prices of the last refresh and says so; **Data & Settings > Live prices** switches it off. Details and limits: `docs/DATA_SOURCES.md`.
 * **Look at the "as of" dates and the data-health line first.** Every market shows when its newest data is from and whether any source failed. A stale market cannot produce
   actionable ideas. The app says so instead of showing old numbers as current.
 * **Reading an idea.** *Entry* is a price to buy or sell at (usually a pullback order that expires if it is not reached in a few bars). *Stop* is where the idea is wrong.
@@ -151,7 +152,7 @@ After the first load it also opens offline, with the data of the last refresh.
   different key). The code, the workflows and the app's pages are public; they contain no data of yours.
 * The browser keeps a key derived from the passphrase on the device so you are not asked every time. Anyone who can use that browser profile can open the data. **Data & Settings** > **Lock now** removes it.
 * Your positions and journal never leave your device. Nothing you do in the app is sent anywhere.
-* The only outside requests are the app's own files and data from your GitHub Pages site. The scheduled job asks the public data providers; the User-Agent it sends names the project and, if you set it, your contact.
+* The app's own files and data come from your GitHub Pages site. With live prices on (the default; **Data & Settings** switches them off), your browser also asks TradingView's public screener for the prices of the instruments in the data: the whole list, never your positions, and TradingView sees your IP address as any site you visit does. The scheduled job asks the public data providers; the User-Agent it sends names the project and, if you set it, your contact.
 
 ## Credits
 

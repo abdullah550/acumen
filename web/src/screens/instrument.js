@@ -2,6 +2,7 @@ import { h, clear, debounce } from '../lib/dom.js';
 import { icon } from '../lib/icons.js';
 import * as F from '../lib/fmt.js';
 import { D } from '../lib/data.js';
+import { Live } from '../lib/live.js';
 import { S } from '../lib/store.js';
 import { linkProps, replaceQuery } from '../lib/router.js';
 import { HORIZONS, HZ_LABEL, HZ_SPAN, STALE_DAYS } from '../lib/util.js';
@@ -97,6 +98,7 @@ function headerCard(detail, row, lp) {
   const fromHigh = yr && F.isNum(lp.px) ? (lp.px / yr.hi - 1) * 100 : null;
   const facts = factsFor(detail, row);
   const quoteTime = lp.ts && String(lp.ts) !== String(detail.price && detail.price.ts) ? F.dateTime(lp.ts) : null;
+  const lq = Live.quote(detail.id);
   return h('section', { class: 'card pad inst-head' },
     h('div', { class: 'ih-left' },
       h('div', { class: 'ih-id' },
@@ -109,7 +111,9 @@ function headerCard(detail, row, lp) {
           chgSpan(lp.chg, 2, { cls: 'ih-chg' }),
           chip(`Close ${F.date(detail.asof, { year: false })}`, stale ? 'warn' : 'outline', { icon: 'clock', title: stale ? `Data is ${age} days old, older than expected for this market` : 'Date of the last daily bar used in the analysis' }),
           stale ? chip(`${age} days old`, 'warn', { icon: 'alert' }) : null,
-          quoteTime ? chip('Quote ' + quoteTime, 'outline') : null)),
+          lq.live && !lq.open ? chip('Market closed', 'outline', { icon: 'clock', title: 'The price is the last one from the live feed; this market is not trading now' })
+            : lq.live ? chip(lq.delayMin ? `${lq.delayMin} min delayed · ${F.time(lp.ts)}` : `Live · ${F.time(lp.ts)}`, 'up', { icon: 'pulse', title: lq.delayMin ? `Price from the live feed, ${lq.delayMin} minutes behind the exchange` : 'Price from the live feed' })
+              : quoteTime ? chip('Quote ' + quoteTime, 'outline') : null)),
       perf.length ? h('div', { class: 'perf', role: 'list', 'aria-label': 'Performance' }, ...perf.map(([k, v]) => h('div', { class: 'pf-cell', role: 'listitem' }, h('span', null, k), chgSpan(v, 1)))) : null),
     h('div', { class: 'ih-right' },
       yr ? h('div', { class: 'rng', role: 'img', 'aria-label': `52-week range ${F.pxr(yr.lo, lp.px, m)} to ${F.pxr(yr.hi, lp.px, m)}, price is ${F.num(Math.abs(fromHigh), 1)}% below the high` },
@@ -299,10 +303,20 @@ export default async function render(route) {
   const root = h('div', { class: 'stack inst' });
 
   for (const n of detail.notes || []) root.append(banner('info', n));
-  root.append(headerCard(detail, row, livePrice(detail)));
+  let head = headerCard(detail, row, livePrice(detail));
+  root.append(head);
   if (!detail.tradable) root.append(banner('info', h('b', null, 'For reference. '), 'Most retail brokers do not offer this instrument, so Acumen never marks it actionable. Use it as context for the instruments you can trade.'));
-  const pos = positionsCard(detail);
+  let pos = positionsCard(detail);
   if (pos) root.append(pos);
+  // a live price for this instrument: redraw the header and the position summary in place
+  const onLive = ev => {
+    if (!((ev.detail && ev.detail.ids) || []).includes(detail.id)) return;
+    const nh = headerCard(detail, row, livePrice(detail));
+    head.replaceWith(nh); head = nh;
+    if (pos) { const np = positionsCard(detail); if (np) { pos.replaceWith(np); pos = np; } }
+  };
+  window.addEventListener('acumen:live', onLive);
+  cleanups.push(() => window.removeEventListener('acumen:live', onLive));
 
   const planHost = h('div');
   const tabHost = h('div', { class: 'tab-body' });

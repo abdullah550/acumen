@@ -1,6 +1,7 @@
 import { h, replace, append } from '../lib/dom.js';
 import * as F from '../lib/fmt.js';
 import { D } from '../lib/data.js';
+import { Live } from '../lib/live.js';
 import { S, Secret, applyAppearance } from '../lib/store.js';
 import { replaceQuery, MEMORY } from '../lib/router.js';
 import { MARKET_LABEL } from '../lib/util.js';
@@ -83,7 +84,44 @@ export default async function render(route) {
 function healthTab() {
   const meta = D.meta || {};
   const a = assess(meta);
-  return append(h('div', { class: 'stack loose' }), [headCard(a, meta), tilesCard(a, meta), marketsSection(a), sourcesSection(a, meta), helpCard()]);
+  return append(h('div', { class: 'stack loose' }), [headCard(a, meta), tilesCard(a, meta), liveCard(), marketsSection(a), sourcesSection(a, meta), helpCard()]);
+}
+
+// Live prices: whether this browser is asking for them, and what each market last answered.
+function liveCard() {
+  const body = h('div', { class: 'stack' });
+  let attached = false;
+  const draw = () => {
+    const st = Live.status();
+    const on = S.get('live') !== false;
+    const now = Date.now();
+    const stateOf = m => {
+      if (!on) return chip('Off', 'outline');
+      if (m.at && !m.open) return chip('Market closed', 'outline', { icon: 'clock' });
+      if (m.at && now - m.at < 180000) return chip(m.delayMin ? `${m.delayMin} min delayed` : 'Live', 'up', { icon: 'pulse' });
+      if (m.err) return chip('Not answering', 'bad', { icon: 'alert' });
+      return chip(m.at ? 'Paused' : 'Waiting', 'warn', { icon: 'clock' });
+    };
+    const list = Object.entries(st.markets).filter(([, m]) => m.total || m.at || m.err).map(([k, m]) => crow({
+      title: h('b', null, m.label), chips: mkChip(k), right: stateOf(m),
+      lines: [
+        [kv('Prices', m.at ? `${F.int(m.n)} of ${F.int(m.total)} instruments` : `${F.int(m.total)} instruments`), kv('Updated', m.at ? F.ago(new Date(m.at).toISOString()) : F.NA)],
+        [h('span', { class: 'muted' }, m.err ? m.err : m.open ? 'Market open' : `Market ${m.session}`)],
+      ],
+    }));
+    body.replaceChildren(
+      row('Live prices', 'This browser asks TradingView’s public screener for current prices once a minute while the app is open and a market is trading. It asks for the whole list of instruments, never for your positions, and TradingView sees your IP address as any site you visit does. PSX prices are 15 minutes behind the exchange. If the feed cannot be reached, the app keeps showing the prices from the last data refresh.',
+        seg([{ value: 'on', label: 'On' }, { value: 'off', label: 'Off' }], on ? 'on' : 'off', v => { Live.setEnabled(v === 'on'); draw(); }, { label: 'Live prices' })),
+      on && list.length ? h('div', { class: 'ev-cards', style: { display: 'grid' } }, ...list) : null);
+  };
+  const onLive = () => {
+    if (!body.isConnected) { if (attached) window.removeEventListener('acumen:live', onLive); return; }
+    attached = true;
+    draw();
+  };
+  window.addEventListener('acumen:live', onLive);
+  draw();
+  return card({ title: 'Live prices', body });
 }
 
 function checkControl() {

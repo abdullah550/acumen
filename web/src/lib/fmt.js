@@ -125,6 +125,12 @@ export function dateTime(iso) {
   return `${t.getDate()} ${MON[t.getMonth()]}, ${hh}:${mm}`;
 }
 
+export function time(iso) {
+  const t = parseDate(iso);
+  if (!t) return NA;
+  return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+}
+
 export function ago(iso) {
   const t = parseDate(iso);
   if (!t) return NA;

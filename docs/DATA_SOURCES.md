@@ -91,12 +91,38 @@ A macro source that fails is replaced by the copy saved on an earlier run (up to
 rates feed the forex carry factor and the Pakistan real rate. `rates.as_of` is when you last checked them; the app flags the table as stale after 120 days (see the
 README, "Keeping rates current").
 
+## Live prices in the browser (while the app is open)
+
+The refresh runs a few times a day, and GitHub often starts it late, so the published prices can be hours old. To keep the screens current the app asks for prices itself:
+while it is open and visible, **your browser** asks TradingView's public screener (`scanner.tradingview.com`, the same service the Pakistan fundamentals come from) for the
+price and daily change of every instrument in the data, **once a minute for each market that is trading** (every 15 minutes for a closed one), and puts the answers into the same
+price table the instrument page, positions, journal and position sizing already read. Nothing is routed through the repository, so nothing waits for a workflow.
+
+| Market | Tickers asked for | What comes back |
+|---|---|---|
+| PSX | `PSX:<symbol>` (indices too: `PSX:KSE100`, `KSE30`, `ALLSHR`, `KMI30`) | **15 minutes behind the exchange** (TradingView's free delay). A few ETFs and preference shares have no price there and keep the published one. |
+| Forex, gold, silver | `FX_IDC:`, then `OANDA:`, then `FX:` plus `PAIR`; gold also `TVC:GOLD`, silver `TVC:SILVER` | Streaming. A rupee cross (`EURPKR`, `JPYPKR`, ...) is the dollar rate times the other currency's own dollar rate, as the history is built; the dirham and riyal use their fixed pegs. |
+| Crypto | the coin's first listed venue of Binance, Coinbase, OKX, KuCoin, Kraken, Bybit (`BINANCE:BTCUSDT`, ...) | Streaming. The first request tries every venue for each coin and remembers which answered; later requests ask that venue only. |
+
+**Why a browser can do this:** the scanner answers requests from any origin, and the app sends its body as `text/plain`, which a browser sends without a preflight request.
+This was tested from GitHub's servers with the site's own origin before it was built. It is an unofficial endpoint, not a contract: if TradingView changes its policy the live
+prices stop and the app carries on with the published ones (the status chip then reads **Live offline**). The PSX data portal and Yahoo cannot be used this way: the portal sends no CORS
+headers (a page cannot read its answer) and Yahoo's batch quote answers 401 without a session.
+
+**Safeguards.** A live price more than a factor of two away from the published one (0.8 to 1.25 for forex) is taken to be another instrument (a coin that shares a ticker with another,
+a bonus issue) and ignored. When a market is closed the last close is kept with its original time. A failed request backs off (30 s, then 1, 2, 5, 10 minutes) and never blocks the app.
+Synthetic demo data is never mixed with real prices. **Data & Settings > Live prices** switches the feature off, and shows what each market answered and when.
+
+**What it does not change.** Scores, ideas, entries, stops, targets and the back-test are still computed by the refresh from daily bars; a live price only moves the "price now" shown
+next to them, the profit and loss of open positions, and the check of whether a stop or target was crossed. TradingView sees your IP address and the list of instruments asked for (the whole list in the data,
+never your positions), like any site you visit.
+
 ## What is not used
 
 * No paid data, no broker feed, no scraping behind a login, no news or sentiment feed, no analyst forecasts.
 * No **point-in-time fundamentals**. Fundamentals are today's values, so they cannot be back-tested without look-ahead; they are kept out of the back-test and only
   move live conviction by a bounded tilt (`signals.max_tilt_points`, 12 points).
-* No intraday data. Everything is daily bars.
+* No intraday data in the analysis. Everything analysed is daily bars; the live quote (above) only refreshes the price shown, and PSX is 15 minutes delayed.
 * No corporate-action history for crypto and forex (not needed) and no dividends data for PSX beyond what the screener's yield implies.
 
 ## Good manners

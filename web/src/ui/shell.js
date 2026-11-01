@@ -3,6 +3,7 @@ import { icon, logo } from '../lib/icons.js';
 import * as F from '../lib/fmt.js';
 import { S, applyAppearance, isDark } from '../lib/store.js';
 import { D } from '../lib/data.js';
+import { Live } from '../lib/live.js';
 import { go, linkProps, onRoute, current } from '../lib/router.js';
 import { MARKET_LABEL } from '../lib/util.js';
 import { mkChip, gradeBadge, toast } from './kit.js';
@@ -46,6 +47,7 @@ export function buildShell() {
   const outlet = h('main', { class: 'page', id: 'main' });
   const title = h('div', { class: 'tb-title' }, 'Acumen');
   const fresh = h('a', { class: 'chip fresh', ...linkProps('/settings'), title: 'Data status' });
+  const liveChip = h('a', { class: 'chip live-chip', ...linkProps('/settings'), title: 'Live prices', hidden: true });
   const themeBtn = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Change theme', title: 'Theme' });
   const lockBtn = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Lock this device', title: 'Lock this device' }, icon('lock'));
   const searchBtn = h('button', { class: 'search-btn', type: 'button', 'aria-label': 'Search instruments' }, icon('search'), h('span', { class: 'sb-long' }, 'Search any stock, pair or coin'), h('span', { class: 'sb-short' }, 'Search'), h('kbd', null, '/'));
@@ -65,9 +67,10 @@ export function buildShell() {
 
   const top = h('header', { class: 'topbar' },
     h('a', { class: 'tb-brand', ...linkProps('/') }, logo(26), 'Acumen'),
-    title, h('div', { class: 'grow' }), searchBtn, fresh, themeBtn, lockBtn);
+    title, h('div', { class: 'grow' }), searchBtn, liveChip, fresh, themeBtn, lockBtn);
 
-  const root = h('div', { class: 'app' }, rail, h('div', { class: 'main' }, top, outlet), tabbar);
+  const notices = h('div', { class: 'notice-host' });
+  const root = h('div', { class: 'app' }, rail, h('div', { class: 'main' }, top, notices, outlet), tabbar);
 
   const setTheme = () => {
     const t = S.get('theme');
@@ -106,6 +109,20 @@ export function buildShell() {
     }
   };
 
+  // The live status: what the browser last heard from the price feed, refreshed whenever it hears again and every few seconds so the ages tick.
+  const refreshLive = () => {
+    const st = Live.status();
+    liveChip.hidden = !st.on;
+    if (!st.on) return;
+    const s = st.summary;
+    clear(liveChip);
+    liveChip.className = 'chip live-chip ' + (s.tone === 'live' ? 'up' : s.tone === 'stale' ? 'warn' : s.tone === 'error' ? 'bad' : '');
+    liveChip.append(h('span', { class: 'dot ' + (s.tone === 'live' ? 'live' : s.tone === 'stale' ? 'stale' : s.tone === 'error' ? 'error' : '') }), h('span', { class: 'lt' }, s.text));
+    liveChip.title = st.detail || 'Live prices';
+  };
+  window.addEventListener('acumen:live', refreshLive);
+  setInterval(refreshLive, 15000);
+
   const mark = r => {
     const sec = sectionOf(r.segs);
     root.querySelectorAll('[data-nav]').forEach(a => {
@@ -117,8 +134,9 @@ export function buildShell() {
   onRoute(mark);
   mark(current());
   refreshStatus();
+  refreshLive();
 
-  return { root, outlet, setTitle: t => { title.textContent = t; }, refreshStatus };
+  return { root, outlet, setTitle: t => { title.textContent = t; }, refreshStatus, notices };
 }
 
 /* ---------- More sheet (mobile) ---------- */

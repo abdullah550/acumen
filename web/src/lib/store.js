@@ -12,6 +12,7 @@ const DEFAULTS = {
   equityMemo: {},         // last typed account size per currency, so switching currency and back does not drift
   profile: 'balanced',    // conservative | balanced | aggressive
   riskPct: null,          // null = profile default
+  live: true,             // ask for live prices from this browser while the app is open
   watchlist: [],
   journal: [],
   ideasFilter: { horizon: 'all', market: 'all', dir: 'all', grade: 'all', actionable: true, sort: 'rank', view: 'cards' },

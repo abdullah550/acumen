@@ -383,6 +383,8 @@ Each `series` entry also has `unit` (`"index"`, `"percent"`, `"price"`). `rates.
 value is `[price, chg_1d_pct, iso_timestamp]`. The app overlays these on ledger positions and watchlists to show live-ish P/L
 and to tell when a stop or target level has been crossed.
 
+While the app is open and **Live prices** is on, the browser replaces entries of this table in memory with quotes from TradingView's public screener (same shape; the timestamp is the quote time, 15 minutes behind for PSX). The file itself is unchanged, and the published value stays the base for a sanity check (see `docs/DATA_SOURCES.md`, "Live prices in the browser").
+
 ## History store (not read by the app)
 
 Between runs the pipeline keeps price history and small state files in a store directory (`--store`, default `store/`; on GitHub it is the single commit of the

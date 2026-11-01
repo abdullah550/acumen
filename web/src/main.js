@@ -2,6 +2,7 @@ import './styles/main.css';
 import { h } from './lib/dom.js';
 import { applyAppearance } from './lib/store.js';
 import { D } from './lib/data.js';
+import { Live } from './lib/live.js';
 import { start as startRouter, onRoute, MEMORY } from './lib/router.js';
 import { logo, icon } from './lib/icons.js';
 import { buildShell } from './ui/shell.js';
@@ -69,7 +70,8 @@ async function begin() {
   app.replaceChildren(shell.root);
   watchScrollRegions(document.body);
   const outlet = shell.outlet;
-  D.get('prices').then(() => shell.refreshStatus()).catch(() => {});
+  D.get('prices').then(() => { shell.refreshStatus(); Live.start(); }).catch(() => {});
+  watchForNewData(shell);
   onRoute(async r => {
     const my = ++token;
     const route = match(r.segs);
@@ -95,6 +97,27 @@ async function begin() {
   const onRouteRerender = () => { lastPath = null; startRouter(); };
   startRouter();
   registerSW();
+}
+
+// A tab or installed app that stays open never reloads by itself: now and then ask whether the refresh job has published newer data.
+function watchForNewData(shell) {
+  let bar = null;
+  let last = 0;
+  const check = async () => {
+    if (bar || document.visibilityState !== 'visible' || navigator.onLine === false || Date.now() - last < 120000) return;
+    last = Date.now();
+    try {
+      const m = await D.fetchRaw('meta.json');
+      const had = D.meta && D.meta.generated_at;
+      if (!m || !m.generated_at || !had || Date.parse(m.generated_at) <= Date.parse(had)) return;
+      bar = h('div', { class: 'update-bar', role: 'status' }, 'Newer analysis has been published.',
+        h('button', { class: 'btn sm primary', type: 'button', onclick: () => location.reload() }, icon('refresh'), 'Reload'),
+        h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Dismiss', onclick: () => { bar.remove(); } }, icon('x')));
+      shell.notices.append(bar);
+    } catch { /* offline or the server is busy: the next check tries again */ }
+  };
+  setInterval(check, 300000);
+  document.addEventListener('visibilitychange', check);
 }
 
 function registerSW() {
