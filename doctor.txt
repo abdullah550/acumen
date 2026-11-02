@@ -1,0 +1,43 @@
+Acumen doctor, 2026-11-02 13:51 UTC
+user agent: AcumenPersonalAnalytics/1.0
+
+Pakistan Stock Exchange
+  ok    PSX data portal: request token                   3.2s  the front page carries a request token (43 characters), sent as X-Req-Id on every data request
+  ok    PSX data portal: share list                      3.8s  762 listed shares and 292 other instruments
+  FAIL  PSX data portal: price history                   0.7s  no end-of-day data for OGDC
+        -> history comes from Yahoo (.KA symbols) when it is up
+  WARN  PSX data portal: a past session                  4.8s  no session found in the last four weekdays (a long holiday, or the page changed)
+        -> daily bars are then built from the portal's price history only
+  ok    PSX data portal: live market watch               2.5s  495 rows in the live market watch
+  ok    TradingView: fundamentals                        0.2s  486 shares, 261 with a P/E
+  ok    Yahoo: fallback history                          0.1s  OGDC.KA: 257 daily bars, newest 2026-10-30, close 306.8
+
+Forex and metals
+  ok    Yahoo: forex prices                              0.6s  EURUSD=X: 22 daily bars, newest 2026-11-02, close 1.122
+  ok    Yahoo: USD/PKR                                   0.6s  USDPKR=X: 22 daily bars, newest 2026-11-02, close 276.7
+  WARN  Yahoo: USD/PKR against its crosses               1.8s  9 of 22 dollar-rupee closes differ from the crosses by more than 0.8% (largest 3.2%, on 2026-10-04): Yahoo has mixed a second quote level into its bars
+        -> dollar-rupee bars that stray are repaired from the crosses, when the crosses answer
+  ok    Yahoo: gold                                      1.2s  GC=F: 22 daily bars, newest 2026-11-02, close 3,949
+  ok    ECB daily fixings (Frankfurter)                  0.2s  15 daily fixings, newest 2026-10-30
+  ok    Daily rate snapshots (currency-api)              0.0s  snapshot for 2026-10-31: 338 currencies, including PKR
+
+Crypto
+  ok    CoinGecko: coin list and market caps             2.7s  250 coins (top: BTC); BTC dominance 59.9%
+  ok    Binance: daily candles                           1.5s  713 markets; BTCUSDT: 29 daily bars, newest 2026-11-01, close 7.835e+04
+  ok    OKX: daily candles                               0.5s  469 markets; BTC-USDT: 99 daily bars, newest 2026-11-01, close 7.834e+04
+  ok    Coinbase: daily candles                          0.5s  409 markets; BTC-USD: 29 daily bars, newest 2026-11-01, close 7.823e+04
+  ok    Kraken: daily candles                            1.2s  622 markets; XBTUSD: 29 daily bars, newest 2026-11-01, close 7.824e+04
+  ok    KuCoin: daily candles                            0.9s  822 markets; BTC-USDT: 29 daily bars, newest 2026-11-01, close 7.835e+04
+  ok    Fear and greed index                             0.1s  fear and greed index 37
+
+Macro context
+  ok    Yahoo: dollar index, yields, oil, gold, equities   3.7s  7 of 7 series
+  WARN  FRED: US rates and Pakistan policy rate         28.7s  no FRED series answered in time
+        -> the policy-rate table in config.yml is used
+  ok    IMF and World Bank: Pakistan inflation           0.2s  World Bank: Pakistan inflation 3.5% for 2025 (the IMF did not answer: HTTP 403)
+
+Verdict
+  Pakistan Stock Exchange    DEGRADED  the portal is down: Yahoo history is used, without highs and lows
+  Forex and metals           DEGRADED  Yahoo: USD/PKR against its crosses: dollar-rupee bars that stray are repaired from the crosses, when the crosses answer
+  Crypto                     OK
+  Macro context              DEGRADED  FRED: US rates and Pakistan policy rate: the policy-rate table in config.yml is used
