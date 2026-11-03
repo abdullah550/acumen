@@ -60,6 +60,18 @@ def test_every_file_is_strict_json_and_present(structured):
     assert any("DEMO DATA" in a["text"] for a in structured.overview["alerts"])
 
 
+def test_bargains_are_for_pakistani_shares_only_and_listed_best_first(structured):
+    body, tile = structured.files["bargains"], structured.overview["bargains"]
+    assert tile["counts"] == body["counts"] and tile["asof"] == body["asof"]  # the home tile is a short form of the file
+    assert body["counts"]["valued"] > 0 and body["counts"]["picks"] == len(body["picks"]) <= 25
+    assert all(r["id"].startswith("PSX:") for r in body["picks"] + body["excluded"])
+    order = [(-p["tier"], -p["mos_pct"]) for p in body["picks"]]
+    assert order == sorted(order)  # best tier first, then the deepest discount
+    assert all(p["px"] < p["fair"] and p["mos_pct"] >= p["tier"] for p in body["picks"])
+    assert all(e["reasons"] for e in body["excluded"])  # a share that looks cheap but is not listed always says why
+    assert body["scope"]["fx"] and body["scope"]["crypto"]  # forex and coins are explained, not silently left out
+
+
 def test_the_published_ideas_agree_with_the_evidence_behind_them(structured):
     assert structured.ideas
     for idea in structured.ideas:

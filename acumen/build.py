@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 
 from . import __version__
+from .analysis import bargains as bg
 from .analysis import fundamental as fu
 from .analysis import ideas as idm
 from .analysis import ledger as led
@@ -147,6 +148,25 @@ def _fundamentals(snaps_by_market: dict[str, list[Snapshot]], data: dict[str, Ma
     return out
 
 
+def _bargains(snaps: list[Snapshot], md: MarketData, cfg: Config, c: dict, now_iso: str, today: dt.date) -> dict:
+    """The Bargains file: PSX shares priced far below a conservative fair value (see ``analysis/bargains.py``)."""
+    items = []
+    for s in snaps:
+        f = md.fundamentals.get(s.id)
+        if s.kind != "equity" or not f:
+            continue
+        q = md.quotes.get(s.id) or {}
+        r = s.row
+        items.append({
+            "id": s.id, "sym": s.sym, "name": s.name, "sector": s.sector,
+            "px": float(q["price"]) if q.get("price") else float(s.last), "px_asof": str(q.get("ts") or s.asof)[:10], "bar_close": float(s.last),
+            "adv": r.get("adv"), "chg1m": r.get("chg1m"), "chg3m": r.get("chg3m"), "chg1y": r.get("chg1y"), "d200": r.get("d200"),
+            "lo52d": r.get("lo52d"), "hi52d": r.get("hi52d"), "beta": r.get("beta"), "bars": r.get("bars"),
+            "stale_days": (pd.Timestamp(today) - pd.Timestamp(s.asof)).days, "f": f,
+        })
+    return bg.screen(items, cfg, now_iso=now_iso, asof=c.get("asof"), stale_days=c.get("stale_days"))
+
+
 def _market_ctx(snaps: list[Snapshot], market: str, today: dt.date) -> dict:
     if not snaps:
         return {"asof": None, "stale": True, "stale_days": None}
@@ -230,6 +250,10 @@ def run(
     # ---- fundamentals, carry, ideas
     asof_year = today.year
     fund = _fundamentals(snaps_by_market, data, cfg, asof_year)
+    bargains = _bargains(snaps_by_market.get("psx", []), data["psx"], cfg, ctx["psx"], now_iso, today) if "psx" in data else None
+    if bargains is not None:
+        cnt = bargains["counts"]
+        log(f"  bargains: {cnt['picks']} listed ({', '.join(f'{k}%: {v}' for k, v in cnt['by_tier'].items())}), {cnt['excluded']} cheap but failing a check, of {cnt['valued']} valued")
     rates = (cfg.get_path("rates.policy_rate_pct", {}) or {})
     carry: dict[str, float | None] = {}
     for s in snaps_by_market.get("fx", []):
@@ -359,6 +383,8 @@ def run(
         "calibration": {"calibrated": n_cal > 0, "pooled_trades": pool_n, "note": f"{n_cal} of {len(cals)} market and horizon pools passed the out-of-sample check"},
         "alerts": alerts, "macro": headline,
     }
+    if bargains is not None:
+        overview["bargains"] = bg.summary(bargains)
 
     # ---- instruments, ideas, calibration, prices
     rows = [s.row for s in all_snaps]
@@ -391,6 +417,8 @@ def run(
         "macro": writer.write("macro", {"generated_at": now_iso, **macro_body}),
         "prices": writer.write("prices", {"generated_at": now_iso, "quotes": quotes}),
     }
+    if bargains is not None:
+        files["bargains"] = writer.write("bargains", bargains)
 
     # ---- meta
     markets_meta, sources = {}, []

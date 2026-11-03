@@ -76,6 +76,10 @@ export default async function render() {
   };
   D.get('ideas').then(f => { allIdeas = f.ideas; fill(); }).catch(e => ideasHost.replaceChildren(errorBlock(e)));
 
+  // bargains: shares priced far below a conservative fair value (only when this data has them)
+  const bargains = bargainsCard(ov);
+  if (bargains) root.append(bargains);
+
   // market cards
   root.append(h('section', { class: 'stack' }, sectionTitle('Market regime', null, 'Is the backdrop helping or hurting? Regime feeds the conviction score for every idea in that market.'),
     h('div', { class: 'grid c3' }, ...MARKETS.filter(m => ov.markets[m]).map(m => marketCard(m, ov.markets[m], cleanups)))));
@@ -92,6 +96,24 @@ export default async function render() {
   root.append(h('div', { class: 'grid c2 top' }, portfolioCard(ov), trackCard(ov)));
 
   return { el: root, destroy: () => cleanups.forEach(fn => fn()) };
+}
+
+/* ---------- bargains ---------- */
+function bargainsCard(ov) {
+  const b = ov.bargains;
+  if (!b || !b.counts) return null;
+  const c = b.counts;
+  const top = b.top || [];
+  const near = top.length ? h('div', { class: 'bg-mini-list' }, ...top.map(t => h('a', { class: 'bg-mini', ...linkProps('/i/' + t.id), title: `${t.name}: ${F.num(t.mos_pct, 0)}% below a conservative fair value` },
+    h('div', { class: 'bg-mini-id' }, h('b', null, t.sym), h('span', { class: 'muted' }, t.name)),
+    h('div', { class: 'mono bg-mini-px' }, `${F.px(t.px, 'psx')} → ${F.px(t.fair, 'psx')}`),
+    h('span', { class: 'chip up' }, `${t.cents}¢ on the dollar`))))
+    : h('p', { class: 'ink-2', style: { fontSize: 'var(--fs-sm)' } }, c.excluded ? `Nothing passes every check today. ${F.int(c.excluded)} look cheap on paper but fail a check; the Bargains page shows why.` : 'Nothing passes every check today.');
+  return card({
+    title: 'Bargains', info: 'Pakistani shares priced far below a deliberately conservative fair value (the middle of three low yardsticks), and only those that also clear the checks that keep value traps out. A screen that tells you where to look: it is not back-tested.',
+    actions: [h('a', { class: 'btn ghost sm', ...linkProps('/bargains') }, 'See all', icon('right'))],
+    body: h('div', { class: 'stack' }, near, h('p', { class: 'muted', style: { fontSize: 'var(--fs-xs)' } }, `${F.int(c.valued)} Pakistani shares valued: ${F.int(c.picks)} pass every check${c.by_tier && c.by_tier['50'] ? `, ${F.int(c.by_tier['50'])} at 50 cents on the dollar or less` : ', none yet at 50 cents on the dollar'}.`)),
+  });
 }
 
 /* ---------- market cards ---------- */

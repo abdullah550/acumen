@@ -324,27 +324,32 @@ def screen(items: list[dict], cfg: Any, *, now_iso: str, asof: str | None = None
             picks.append(_row(ev, tier, bcfg, asof))
     picks.sort(key=lambda r: (-r["tier"], -(r["mos_pct"] or 0.0)))
     excluded.sort(key=lambda r: -(r["mos_pct"] or 0.0))
-    cap = int(bcfg["max_list"])
+    cap, cap_x = int(bcfg["max_list"]), int(bcfg["max_excluded"])
     counts = {f"{t:.0f}": sum(1 for p in picks if p["tier"] == t) for t in sorted(tiers, reverse=True)}
+    n_picks, n_excluded = len(picks), len(excluded)  # the counts are of everything that qualified; the lists below them are cut to the caps
     picks = picks[:cap]
-    excluded = excluded[: int(bcfg["max_excluded"])]
+    excluded = excluded[:cap_x]
     for r in excluded:  # keep the file small: the cards of the excluded need the headline numbers and the reasons only
         for k in ("models", "target1", "target2", "review_below", "horizon", "horizon_months", "why", "risks"):
             r.pop(k, None)
     ke = required_return(vcfg, 1.0)
     notes = []
+    if n_picks > cap:
+        notes.append(f"Only the {cap} deepest discounts of the {n_picks} shares that pass every check are listed.")
+    if n_excluded > cap_x:
+        notes.append(f"Only the {cap_x} deepest discounts of the {n_excluded} cheap shares that fail a check are listed.")
     if skipped:
         notes.append(f"{skipped} funds and real estate trusts were not valued: their reported profit includes unrealised gains, so a value built on it would mislead.")
     if stale_days is not None and stale_days > 3:
         notes.append(f"The latest Pakistani prices are {stale_days} days old, so every discount below is measured against an old price.")
     return {
         "generated_at": now_iso, "asof": asof, "stale_days": stale_days, "tiers": _tier_defs(tiers),
-        "counts": {"screened": len(items), "valued": valued, "picks": len(picks), "by_tier": counts, "excluded": len(excluded)},
+        "counts": {"screened": len(items), "valued": valued, "picks": n_picks, "by_tier": counts, "excluded": n_excluded},
         "picks": picks, "excluded": excluded,
         "method": {
             "required_return_pct": _r(ke * 100.0, 1), "growth_pct": _r(float(bcfg["growth"]) * 100.0, 1), "risk_free_pct": _r(float(vcfg["risk_free_pkr"]) * 100.0, 1),
             "equity_premium_pct": _r(float(vcfg["equity_risk_premium"]) * 100.0, 1), "models": MODELS, "horizon_months": list(bcfg["horizon_months"]),
-            "review_drop_pct": float(bcfg["review_drop_pct"]), "max_position_pct": float(bcfg["max_position_pct"]),
+            "review_drop_pct": float(bcfg["review_drop_pct"]), "max_position_pct": float(bcfg["max_position_pct"]), "watch_min_mos_pct": watch,
             "checks": {"min_mcap": float(bcfg["min_mcap"]), "min_adv": min_adv, "min_free_float_pct": float(bcfg["min_free_float_pct"]), "min_pe": float(bcfg["min_pe"]),
                        "roe_outlier_pct": float(bcfg["roe_outlier_pct"]), "max_eps_jump_pct": float(bcfg["max_eps_jump_pct"]), "max_drop_1m_pct": float(bcfg["max_drop_1m_pct"]),
                        "max_drop_3m_pct": float(bcfg["max_drop_3m_pct"]), "max_debt_to_equity": float(bcfg["max_debt_to_equity"])},

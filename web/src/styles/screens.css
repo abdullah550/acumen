@@ -571,3 +571,49 @@
   .st-row-c { width: 100%; margin-left: 0; justify-content: flex-start; }
   .ev-gloss > .st-steps { padding-right: var(--s-4); }
 }
+
+/* ---------- Bargains ---------- */
+.bg-note { max-width: 78ch; }
+.bg-stats { padding-top: 2px; }
+.bg-card { position: relative; display: flex; flex-direction: column; gap: 12px; padding: var(--s-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); min-width: 0; }
+.bg-card.dim { background: color-mix(in srgb, var(--surface) 70%, var(--bg)); }
+.bg-card .ic-sym { align-self: flex-start; }
+.bg-cents { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; flex: none; }
+.bg-cents .n { font-family: var(--font-mono); font-size: var(--fs-xl); font-weight: 600; color: var(--up-ink); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.bg-cents .u { font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; color: var(--ink-3); }
+.bg-cents.muted .n { color: var(--ink-2); }
+.bg-prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 12px; }
+.bg-prices.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.bg-cell { min-width: 0; }
+.bg-cell .ic-v { overflow-wrap: anywhere; }
+.bg-gauge { padding: 4px 0 0; }
+.bg-track { position: relative; height: 8px; border-radius: 4px; background: var(--surface-2); margin: 6px 5px 8px; }
+.bg-gap { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--up) 45%, transparent); border-radius: 4px; }
+.bg-model { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--ink-3); opacity: .7; border-radius: 1px; }
+.bg-fair { position: absolute; top: -4px; width: 8px; height: 8px; margin-left: -4px; margin-top: 2px; transform: rotate(45deg); background: var(--up-ink); border-radius: 1px; box-shadow: 0 0 0 2px var(--surface); }
+.bg-px { position: absolute; top: -4px; bottom: -4px; width: 4px; margin-left: -2px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 0 2px var(--surface); }
+.bg-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: var(--fs-2xs); color: var(--ink-3); }
+.bg-legend .k::before { content: ""; display: inline-block; vertical-align: middle; margin-right: 5px; }
+.bg-legend .k.px::before { width: 4px; height: 10px; background: var(--accent); border-radius: 2px; }
+.bg-legend .k.model::before { width: 2px; height: 10px; background: var(--ink-3); opacity: .7; }
+.bg-legend .k.fair::before { width: 7px; height: 7px; background: var(--up-ink); transform: rotate(45deg); border-radius: 1px; }
+.bg-why { font-size: var(--fs-sm); color: var(--ink-2); margin: 0; }
+.bg-risks { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.bg-risks li { position: relative; padding-left: 14px; font-size: var(--fs-sm); color: var(--ink-2); }
+.bg-risks li::before { content: ""; position: absolute; left: 1px; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--warning); }
+.bg-how { border-top: 1px solid var(--line); padding-top: 10px; }
+.bg-how summary { cursor: pointer; font-size: var(--fs-sm); font-weight: 600; color: var(--accent); }
+.bg-how[open] summary { margin-bottom: 8px; }
+.bg-model-row { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); }
+.bg-model-row .mono { white-space: nowrap; }
+.bg-actions { margin-top: auto; }
+.bg-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: var(--fs-sm); color: var(--ink-2); }
+.bg-list b { color: var(--ink); font-weight: 600; }
+.bg-mini-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: var(--s-3); }
+.bg-mini { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); color: var(--ink); text-decoration: none; min-width: 0; }
+.bg-mini:hover { border-color: var(--accent-line); background: var(--surface-2); text-decoration: none; }
+.bg-mini-id { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; max-width: 100%; }
+.bg-mini-id b { font-size: var(--fs-lg); }
+.bg-mini-id span { font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bg-mini-px { font-size: var(--fs-sm); }
+.bg-card .ic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

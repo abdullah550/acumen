@@ -34,6 +34,7 @@ Both sides must follow this document. When the pipeline and this document disagr
 | ledger | `data/ledger.{json,enc}` | Live track record: ideas issued by Acumen and what happened to them |
 | macro | `data/macro.{json,enc}` | Cross-asset and Pakistan macro panel |
 | prices | `data/prices.{json,enc}` | Latest quotes for every instrument (refreshed more often than the rest) |
+| bargains | `data/bargains.{json,enc}` | Pakistani shares priced far below a conservative fair value, and the cheap ones that failed a check |
 | detail | `data/detail/<market>/<SYMBOL>.{json,enc}` | Full data for one instrument (lazy loaded) |
 
 `<SYMBOL>` is the symbol with any character outside `[A-Za-z0-9._-]` replaced by `_`.
@@ -61,7 +62,7 @@ in localStorage (per device) and never sends it anywhere.
   "enc": null, "ext": "json",
   "files": {"overview":"overview.json","instruments":"instruments.json","ideas":"ideas.json",
             "portfolio":"portfolio.json","calibration":"calibration.json","ledger":"ledger.json",
-            "macro":"macro.json","prices":"prices.json"},
+            "macro":"macro.json","prices":"prices.json","bargains":"bargains.json"},
   "detail_path": "detail/{market}/{symbol}.json",
   "markets": {
     "psx":    {"label":"Pakistan Stock Exchange","currency":"PKR","asof":"2026-09-29","instruments":482,
@@ -129,7 +130,9 @@ A `sources[]` line with `ok: false` is a data source that failed in this run; `m
   "track_record": {"since":"2026-08-01","open":14,"closed":31,"win":0.55,"avg_r":0.38,"note":"Live results since Acumen started issuing ideas"},
   "calibration": {"calibrated":true,"pooled_trades":18500,"note":"..."},
   "alerts": [{"level":"warn","market":"psx","text":"PSX data is 2 sessions old"}, {"level":"info","market":"fx","text":"..."}],
-  "macro": {"usd_pkr":283.1,"policy_rate_pk":10.5,"dxy":101.2,"gold":2450.0,"brent":78.1,"vix":17.2}
+  "macro": {"usd_pkr":283.1,"policy_rate_pk":10.5,"dxy":101.2,"gold":2450.0,"brent":78.1,"vix":17.2},
+  "bargains": {"counts":{"screened":466,"valued":208,"picks":3,"by_tier":{"50":0,"35":2,"20":1},"excluded":12},"asof":"2026-10-30","stale_days":2,
+               "top":[{"id":"PSX:DEMOA","sym":"DEMOA","name":"Demo Ltd","px":40.0,"fair":72.0,"mos_pct":44.4,"cents":56,"tier":35.0}]}
 }
 ```
 
@@ -138,6 +141,8 @@ A `sources[]` line with `ok: false` is a data source that failed in this run; `m
 (`entry` is the entry price, `targets` the two target prices, `eta` the fast and slow calendar-day estimate to the first target). The app may equally use full ideas from `ideas.json`.
 
 `overview.calibration` is `{"calibrated": bool, "pooled_trades": int, "note": str}`: whether any pool's conviction mapping passed the out-of-sample check.
+`overview.bargains` is the home-screen tile of `bargains.json` (absent when the file was not built, for example when there is no Pakistani data): `counts` and the dates
+copied from the file, and `top`, the (up to three) best-listed shares with just enough to draw a line each. See `bargains.json` below.
 `overview.alerts[]` are `{"level":"warn|info","market":"all|psx|fx|crypto","text"}`. Besides data problems they say, in words, where signals have and have not
 beaten random entries (see `calibration.json`), so a reader who never opens the Evidence screen still learns whether anything is actionable.
 
@@ -385,6 +390,61 @@ and to tell when a stop or target level has been crossed.
 
 While the app is open and **Live prices** is on, the browser replaces entries of this table in memory with quotes from TradingView's public screener (same shape; the timestamp is the quote time, 15 minutes behind for PSX). The file itself is unchanged, and the published value stays the base for a sanity check (see `docs/DATA_SOURCES.md`, "Live prices in the browser").
 
+### bargains.json
+
+Pakistani shares priced far below a deliberately conservative fair value ("a dollar for fifty cents"). Built from the stored fundamentals and prices, so it
+needs no extra source. It covers shares only (`scope` says why forex and crypto have no fair value), skips funds and real estate trusts, and is a screen, not a signal:
+nothing in it is back-tested (free sources have no point-in-time fundamentals to test it on) and it feeds nothing else. Absent from `meta.files` when no Pakistani data was built.
+
+```json
+{"generated_at":"...","asof":"2026-10-30","stale_days":2,
+ "tiers":[{"min_mos":50.0,"max_cents":50.0,"label":"50 cents on the dollar or less","name":"A dollar for fifty cents"},
+          {"min_mos":35.0,"max_cents":65.0,"label":"51 to 65 cents on the dollar","name":"35% or more below fair value"}],
+ "counts":{"screened":466,"valued":208,"picks":3,"by_tier":{"50":0,"35":2,"20":1},"excluded":12},
+ "picks":[{
+   "id":"PSX:DEMOA","sym":"DEMOA","name":"Demo Ltd","sector":"Cement","px":14.88,"px_asof":"2026-10-30",
+   "fair":27.18,"low":26.4,"high":33.0,"mos_pct":45.2,"cents":55,"upside_pct":82.6,"tier":35.0,
+   "target1":21.03,"target2":27.18,"review_below":11.16,"horizon":"12 to 36 months","horizon_months":[12,36],
+   "models":[{"name":"Earnings power","value":27.18,"note":"profit 4.62 a share / 17% required return, no growth"},
+             {"name":"Peer P/E","value":33.0,"note":"..."},{"name":"Justified P/B","value":26.4,"note":"..."}],
+   "pe":2.48,"pe_peer":7.4,"pb":0.48,"roe":21.6,"roe_derived":false,"dy":null,"eps":5.99,"eps_norm":4.62,"bvps":30.8,"eps_growth_pct":84.7,
+   "mcap":2.5e9,"adv":7.2e6,"free_float_pct":26.7,"chg1m":0.2,"chg3m":-1.3,"chg1y":-17.3,"d200":-4.3,"lo52d":20.7,"hi52d":-24.8,
+   "why":"Priced at 55 cents on the dollar: PKR 14.88 against a conservative fair value of PKR 27.18. ...",
+   "risks":["Pays no dividend: you are only rewarded if the price catches up with value"]}],
+ "excluded":[{"id":"PSX:DEMOB","sym":"DEMOB","...":"the same facts as a pick down to hi52d, with tier null",
+              "reasons":["A P/E of 0.4 is too low to believe: it is usually a one-off gain or a data error"]}],
+ "method":{"required_return_pct":17.0,"growth_pct":3.0,"risk_free_pct":11.0,"equity_premium_pct":6.0,
+           "models":[{"name":"Earnings power","text":"..."}],"horizon_months":[12,36],"review_drop_pct":25.0,"max_position_pct":5.0,"watch_min_mos_pct":35.0,
+           "checks":{"min_mcap":2e9,"min_adv":5e6,"min_free_float_pct":10.0,"min_pe":1.5,"roe_outlier_pct":60.0,"max_eps_jump_pct":300.0,
+                     "max_drop_1m_pct":20.0,"max_drop_3m_pct":35.0,"max_debt_to_equity":2.5}},
+ "scope":{"psx":"...","fx":"...","crypto":"..."},
+ "notes":["3 funds and real estate trusts were not valued: ..."],
+ "caveats":["Fair values are estimates from reported profit and book value, ..."]}
+```
+
+*Fair value* is the middle one (never the average) of three yardsticks, each chosen to be on the low side: **earnings power** (profit per share, normalised, divided by the
+required return, no growth), **peer P/E** (the same profit times the sector's median P/E, capped) and **justified P/B** (book value times (ROE - g) / (r - g), with ROE capped at 30%).
+Profit is normalised before use: a rise is averaged with last year's, and a rebound of 100% or more counts for half, because it may be a recovery from a loss or a one-off. The required
+return `r` is the risk-free rate plus the equity premium times the share's beta, held between 1 and 1.6 (a quiet share is not given a lower hurdle than the market). The return on equity
+credited to a share never exceeds what its profit actually earns on book value. `low` and `high` are the lowest and the highest yardstick.
+
+*Reading the numbers.* `mos_pct` is how far the price is below fair value, `cents` the price as cents on the dollar of fair value (`round(px / fair * 100)`), `upside_pct` the gain if the price reaches fair
+value. `tier` is the deepest tier in `tiers` whose `min_mos` the discount reaches. `target1` is halfway to fair value, `target2` fair value, `review_below` the price at which the accounts should be re-read
+(`review_drop_pct` under the purchase price). `horizon` is a typical wait for the gap to close, an assumption and not a forecast. `roe_derived` is true when the return on equity was
+computed from profit and book value because the feed gave none.
+
+*What is listed.* A share is a **pick** only when all three yardsticks put its value above the price, its discount reaches the lowest tier, and every hard check passes: P/E at least `min_pe`, price at least
+`min_pb` of book value, ROE below `roe_outlier_pct`, profit growth below `max_eps_jump_pct`, market value at least `min_mcap`, average daily value traded at least `min_adv`, free float at least `min_free_float_pct`
+(when reported), no fall of `max_drop_1m_pct` in a month or `max_drop_3m_pct` in three, debt to equity at most `max_debt_to_equity` (not applied to lenders, ignored when the feed has no figure), the price within
+`max_price_gap` of both the price implied by the reported ratios and the last stored close, a trade within `max_stale_days` and a known profit history. A share at least `watch_min_mos_pct` below fair value that fails
+any of them is an **excluded** row with its `reasons`, so a data error or a value trap is shown for what it is instead of hidden. `risks` on a pick are soft warnings that do not keep it off the list (no dividend,
+a small company, thin trading, heavy debt, a profit that rebounded or sits near a cycle peak, yardsticks that disagree widely ...).
+
+`counts` cover everything that qualified: `picks` and `by_tier` the shares that pass every check, `excluded` the cheap shares that fail one, `valued` those for which a fair value could be computed and
+`screened` every Pakistani share that has reported fundamentals. `picks` and `excluded` are cut to `bargains.max_list` (25) and `bargains.max_excluded` (20) rows, deepest discount first (picks: best tier first), and a note says so when the cut bites.
+`stale_days` is how many days old the latest Pakistani price is; above three, a note says every discount is measured against an old price. Every threshold is a fixed rule in `default_config.yml`
+(`bargains:`), not fitted to data.
+
 ## History store (not read by the app)
 
 Between runs the pipeline keeps price history and small state files in a store directory (`--store`, default `store/`; on GitHub it is the single commit of the
@@ -401,6 +461,7 @@ error instead of starting again from empty history. A plain store is sealed the 
 | Command Center | overview (+ meta for freshness) |
 | Ideas | ideas (+ instruments for filters/sparklines, prices for live price) |
 | Screener | instruments |
+| Bargains | bargains (+ meta for freshness, user settings from localStorage for the position cap) |
 | Instrument | detail (+ prices) |
 | Portfolio | portfolio, ideas, user settings from localStorage |
 | Markets | overview (sectors, strength, heat), macro |
