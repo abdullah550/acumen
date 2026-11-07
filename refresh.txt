@@ -1,0 +1,28 @@
+Fetching Forex
+  fx: XAUUSD follows the GC=F futures contract: Yahoo has no spot series for it
+  fx: 23 dollar-rupee bar(s) were repaired: Yahoo mixed a second quote level into them, so they were checked against the rupee's crosses with the dirham and the riyal, which are pegged to the dollar
+  fx: 1 pair(s) were extended with daily rate snapshots (no highs or lows) because Yahoo and the ECB were unavailable
+  fx: 1 pair(s) have no bars from the last few days: USDCNH
+  fx: 51 instruments, 40 updated, 29s
+  macro: no data for DGS2, FEDFUNDS, T10Y2Y
+  macro: 7 series (0 from an earlier run), Pakistan inflation 3.55
+  fx: 51 instruments, 64,235 bars, 4 of 6 sources ok (failed: fred, imf_inflation) in 62s
+Fetching Crypto
+  crypto: left out 204 thin trading, 32 stablecoin or pegged token, 3 unusual ticker
+  crypto: 4 coin(s) had no candle source
+  crypto: global market figures: api.coingecko.com is being skipped for this run (rate limited)
+  crypto: 257 instruments (0 already current), 239 updated, 18 stale, 4 without data, 75s
+  crypto: 257 instruments, 176,457 bars, 7 of 7 sources ok in 75s
+Fetching Pakistan Stock Exchange
+  psx: 13 stock(s) still have a one-day close-to-close move of more than 50% in their history: BAPLR1 2026-11-06 x0.0484, AMTEX 2024-06-03 x2.79, KSTM 2024-06-03 x2.43, PINLR 2026-11-02 x0.446, PASL 2024-06-07 x2.14, CLCPS 2024-06-06 x2, GSPM 2024-05-30 x1.93, GUSM 2024-05-30 x1.71, DWTM 2022-03-24 x1.62, FCSC 2024-09-13 x1.59, HIRAT 2024-04-30 x1.59, BELA 2023-11-20 x1.58 ...
+  psx: 512 instruments, history 100%, 6 portal requests, 31s
+  psx: 512 instruments, 488,035 bars, 2 of 2 sources ok in 31s
+Acumen build 2026-11-07T06:06:11Z (live)
+  psx: analysed 494 of 494 instruments
+  fx: analysed 49 of 49 instruments
+  crypto: analysed 241 of 241 instruments
+  calibration: psx/short=unvalidated(10707), psx/medium=unvalidated(6250), psx/long=unvalidated(1750), fx/short=calibrated(1587), fx/medium=calibrated(934), fx/long=unvalidated(260), crypto/short=unvalidated(6943), crypto/medium=unvalidated(3285), crypto/long=unvalidated(908)
+  bargains: 3 listed (50%: 0, 35%: 2, 20%: 1), 15 cheap but failing a check, of 236 valued
+  ideas: 159 (0 actionable)
+  wrote 794 files, 71.9 MB in 110s
+Done: 159 ideas (0 actionable), 794 files, 71.9 MB (not encrypted) in 110s -> site/data
