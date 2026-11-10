@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { groupByTier, gauge, positionCap, centsText, headline, nearMisses } from '../src/lib/bargains.js';
+import { groupByTier, gauge, positionCap, centsText, headline, nearMisses, ageLabel, ofText, recordHeadline, recordStatus } from '../src/lib/bargains.js';
 
 const tiers = [
   { min_mos: 50, max_cents: 50, label: '50 cents on the dollar or less', name: 'A dollar for fifty cents' },
@@ -75,4 +75,37 @@ test('near misses come first: fewest failed checks, then the deepest discount, w
   assert.deepEqual(nearMisses(rows).map(r => r.sym), ['ONE2', 'ONE', 'TWO', 'ERR']);
   assert.equal(rows[0].sym, 'ERR');
   assert.deepEqual(nearMisses(null), []);
+});
+
+test('an age is worded in months or years, and a count says how many of how many', () => {
+  assert.deepEqual([90, 180, 365, 730, 30, 45, 0, null].map(ageLabel), ['3 months', '6 months', '1 year', '2 years', '30 days', '45 days', '', '']);
+  assert.equal(ofText(2, 3), '2 of 3');
+  assert.equal(ofText(0, 3), '0 of 3');
+  assert.equal(ofText(0, 0), '');
+  assert.equal(ofText(null, 3), '');
+});
+
+test('the record headline tells an empty record, a young one and one that can be read apart', () => {
+  const hz = (days, n, ready) => ({ days, n, ready });
+  const rows = [{ sym: 'A' }, { sym: 'B' }];
+  assert.equal(recordHeadline(null).kind, 'none');
+  assert.equal(recordHeadline({ rows: [], horizons: [hz(90, 0, false)] }).kind, 'none');
+  const early = recordHeadline({ rows, horizons: [hz(90, 2, false), hz(180, 0, false)], counts: { tracked: 2, open: 2 }, since: '2026-11-02', oldest_days: 95, min_shares: 20 });
+  assert.equal(early.kind, 'early');
+  assert.equal(early.best, null);
+  assert.deepEqual([early.tracked, early.open, early.since, early.oldest, early.min], [2, 2, '2026-11-02', 95, 20]);
+  const ok = recordHeadline({ rows, horizons: [hz(90, 30, true), hz(180, 22, true), hz(365, 4, false)], counts: { tracked: 30 } });
+  assert.equal(ok.kind, 'readable');
+  assert.equal(ok.best.days, 180);  // the longest age that has enough shares
+});
+
+test('a followed share says how it ended, or the most telling thing that is true of it now', () => {
+  const open = { status: 'open', last: 20, review_below: 11, listed_now: true, t1_date: null };
+  assert.equal(recordStatus(open).key, 'following');
+  assert.equal(recordStatus({ ...open, listed_now: false }).key, 'dropped');
+  assert.equal(recordStatus({ ...open, t1_date: '2026-12-01' }).key, 'first');
+  assert.equal(recordStatus({ ...open, t1_date: '2026-12-01', last: 10 }).key, 'review');  // below the re-read price outranks an old milestone
+  assert.deepEqual(recordStatus({ status: 'closed', reason: 'fair_value' }), { key: 'fair', label: 'Reached fair value', tone: 'up' });
+  assert.equal(recordStatus({ status: 'closed', reason: 'time' }).key, 'time');
+  assert.equal(recordStatus(null).key, 'none');
 });

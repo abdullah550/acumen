@@ -14,6 +14,7 @@ import pandas as pd
 
 from . import __version__
 from .analysis import bargains as bg
+from .analysis import bargains_record as br
 from .analysis import fundamental as fu
 from .analysis import ideas as idm
 from .analysis import ledger as led
@@ -294,6 +295,15 @@ def run(
     ledger_state, ledger_view = led.update(ledger_state, ideas, bars_all, insts_all, cfg, today.isoformat())
     if store:
         store.save_json(led.STATE_NAME, ledger_state)
+    if bargains is not None:  # the live record of the shares the Bargains page lists: kept in the store, shown inside bargains.json
+        liquid_min = float(cfg.get_path("universe.psx.min_adv_value", 5e6))
+        liquid = [s.id for s in snaps_by_market.get("psx", []) if s.kind == "equity" and (s.row.get("adv") or 0.0) >= liquid_min]
+        rec_state = store.load_json(br.STATE_NAME) if store else None
+        rec_state, bargains["record"] = br.update(rec_state, bargains["picks"], bars_all, benches["psx"][0], liquid, cfg, today.isoformat(), ctx["psx"].get("asof"))
+        if store:
+            store.save_json(br.STATE_NAME, rec_state)
+        rc = bargains["record"]["counts"]
+        log(f"  bargains record: {rc['tracked']} followed ({rc['open']} open, {rc['reached_fair_value']} reached fair value), oldest {bargains['record']['oldest_days']} days")
     macro_extras = next((md.extras["macro"] for md in data.values() if md.extras.get("macro")), {})
     macro_body, headline = mac.macro_block({"macro": macro_extras}, fx_bars, cfg, today.isoformat())
 

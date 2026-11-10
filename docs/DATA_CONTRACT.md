@@ -445,10 +445,40 @@ a small company, thin trading, heavy debt, a profit that rebounded or sits near 
 `stale_days` is how many days old the latest Pakistani price is; above three, a note says every discount is measured against an old price. Every threshold is a fixed rule in `default_config.yml`
 (`bargains:`), not fitted to data.
 
+### bargains.json: `record`
+
+The live record of the Bargains screen, kept in the history store (`state/bargains_record.json`; it cannot be recomputed from market data) and shown under `record`.
+Every share listed on a run is logged once, the day it first passes every check, at the price on its card, and is followed from then on whether or not it stays on the list.
+A record closes when a close reaches the fair value it was listed with (`reason: "fair_value"`) or when the longest typical wait (`horizon_months`, 36 months) has passed
+(`"time"`); the same share is logged again only after `bargains.record_cooldown_days` (90). Stored prices are rescaled when a bonus issue or split happens, so every listing price and
+target is rescaled by the same factor, read off the stored close of the listing day against the close it had when the share was logged; ratios within 0.2% of one are rounding.
+Bars dated after `asof` are not read.
+
+```json
+{"since":"2026-10-30","asof":"2026-10-30","verdict":"early","min_shares":20,
+ "counts":{"tracked":3,"open":3,"closed":0,"listed_now":3,"reached_fair_value":0,"below_review":0},"oldest_days":0,
+ "horizons":[{"days":90,"n":0,"ready":false,"ret_mean":null,"ret_median":null,"index_mean":null,"typical_mean":null,"excess_index_mean":null,"excess_typical_mean":null,
+              "ahead_index":0,"ahead_index_of":0,"ahead_typical":0,"ahead_typical_of":0,"reached_t1":0,"reached_t2":0,"below_review":0}],
+ "rows":[{"id":"PSX:KOHE","sym":"KOHE","name":"...","sector":"...","listed":"2026-10-30","cents":55,"status":"open","reason":null,"closed":null,"listed_now":true,
+          "t1_date":null,"t2_date":null,"review_date":null,"days":0,"px":14.88,"last":14.88,"fair":27.18,"target1":21.03,"target2":27.18,"review_below":11.16,
+          "ret_pct":0.0,"index_pct":0.0,"typical_pct":0.0,"excess_index_pct":0.0,"excess_typical_pct":0.0,"gap_closed_pct":0.0}],
+ "caveats":["..."]}
+```
+
+`rows` are newest first. `ret_pct` is the price change since the listing day (to the close of the record when it has closed), adjusted for bonus issues, splits and dividends, in percent. `index_pct` is the KSE-100
+over the same days and `typical_pct` the median return of the liquid shares (average daily value traded at least `universe.psx.min_adv_value`, at least 30 of them with a price at both ends, else `null`) over the
+same days; the second is the fairer yardstick because stored prices are dividend-adjusted and the index is not. `gap_closed_pct` is the share of the way from the listing price to fair value (100 = reached).
+`t1_date`, `t2_date` and `review_date` are the first closes at the first target, at fair value and at or below the re-read price; once seen they are never taken back.
+
+`horizons` read the shares at fixed ages (`bargains.record_horizons_days`: 90, 180, 365) so that shares listed at different times are comparable: `n` shares have been followed that long, `ret_*` is their
+return over their first `days` days, `index_mean`/`typical_mean` the yardsticks over the same days, `ahead_*` how many beat each of them (`_of` of how many could be compared), `reached_t1`/`reached_t2`/`below_review`
+how many touched each level within that time. An age is `ready` only when `n >= min_shares` (`bargains.record_min_shares`, 20); `verdict` is `none` (nothing logged), `early` (no age ready) or `readable`.
+Shares listed in the same weeks share the same market moves, so a ready age still says little when they were all listed together.
+
 ## History store (not read by the app)
 
 Between runs the pipeline keeps price history and small state files in a store directory (`--store`, default `store/`; on GitHub it is the single commit of the
-`data` branch): `bars_<market>.csv.gz` (columns `id,date,open,high,low,close,volume,approx_hl`) and `state/<name>.json` (the ledger, backfill progress, node pins).
+`data` branch): `bars_<market>.csv.gz` (columns `id,date,open,high,low,close,volume,approx_hl`) and `state/<name>.json` (the ledger, the Bargains live record `bargains_record`, backfill progress, node pins).
 With a passphrase every store file is sealed: `bars_psx.csv.gz.enc`, `state/ledger.json.enc`, AES-256-GCM, key = PBKDF2-HMAC-SHA256 of the passphrase with its own
 salt (different from the site's key, so the browser never holds the key to the history), same `iv || ciphertext+tag` layout, gzip inside for JSON state and none for the
 bars (already gzip). The pipeline never writes a plain copy beside a sealed file; opening a sealed store without the passphrase, or with a wrong one, stops the run with an

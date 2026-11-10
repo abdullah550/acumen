@@ -72,6 +72,17 @@ def test_bargains_are_for_pakistani_shares_only_and_listed_best_first(structured
     assert body["scope"]["fx"] and body["scope"]["crypto"]  # forex and coins are explained, not silently left out
 
 
+def test_the_bargains_record_follows_every_listed_share_from_its_first_day(structured):
+    body = structured.files["bargains"]
+    rec = body["record"]
+    assert rec["counts"]["tracked"] == len(rec["rows"]) == body["counts"]["picks"]  # a first run logs every listed share, once
+    assert {r["id"] for r in rec["rows"]} == {p["id"] for p in body["picks"]}
+    assert rec["verdict"] == ("early" if body["picks"] else "none")  # one day of history says nothing, and the file says so
+    assert [h["days"] for h in rec["horizons"]] == [90, 180, 365] and not any(h["ready"] for h in rec["horizons"])
+    assert all(r["status"] == "open" and r["days"] == 0 and r["ret_pct"] == 0.0 for r in rec["rows"])  # logged today: nothing has happened yet
+    assert len(rec["caveats"]) >= 3 and rec["min_shares"] == 20 and rec["asof"] == body["asof"]
+
+
 def test_the_published_ideas_agree_with_the_evidence_behind_them(structured):
     assert structured.ideas
     for idea in structured.ideas:

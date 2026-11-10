@@ -1,4 +1,4 @@
-import { h, append } from '../lib/dom.js';
+import { h, append, replace } from '../lib/dom.js';
 import * as F from '../lib/fmt.js';
 import { D } from '../lib/data.js';
 import * as Z from '../lib/sizing.js';
@@ -32,6 +32,7 @@ export default async function render() {
     pageHead('Bargains', SUB, asofChip(body)),
     h('div', { class: 'stack' }, verdict(body), summaryStats(body), h('p', { class: 'muted fs-sm bg-note' }, 'A screen that tells you where to look, not a recommendation: it is not back-tested, and a low price can stay low. Read the company’s latest accounts and announcements before acting.')),
     ...tierSections(body),
+    recordSection(body),
     excludedSection(body),
     methodSection(body),
   ]);
@@ -138,6 +139,104 @@ function howBuilt(p) {
     h('div', { class: 'stack tight' },
       ...(p.models || []).map(m => h('div', { class: 'bg-model-row' }, h('div', null, h('b', null, m.name), h('div', { class: 'muted fs-xs' }, m.note)), h('div', { class: 'mono' }, `PKR ${pkr(m.value)}`))),
       h('p', { class: 'muted fs-xs' }, 'Fair value is the middle of the three, never their average, so one generous method cannot lift it.')));
+}
+
+/* ======================================================================= the live record */
+const TH = (text, cls) => h('th', { class: cls, scope: 'col' }, text);
+const dash = () => h('span', { class: 'muted' }, F.NA);
+const retCell = (x, dp = 1) => (F.isNum(x) ? chgSpan(x, dp) : dash());
+const kv = (k, v) => h('span', null, h('span', { class: 'muted' }, k + ' '), v);
+const sinceText = r => (r.days ? plural(r.days, 'day', 'days') : 'Just listed');
+
+function recordSection(body) {
+  const rec = body.record;
+  if (!rec) return null;
+  const v = B.recordHeadline(rec);
+  const state = v.kind === 'none' ? chip('Not started', 'outline')
+    : v.kind === 'early' ? chip('Too early to read', 'warn', { icon: 'clock' })
+      : chip(`Read at ${B.ageLabel(v.best.days)}`, 'accent');
+  return h('section', { class: 'stack bg-rec' },
+    sectionTitle('Live record', state, 'Every share is logged the day it first passes every check and followed from then on, against the KSE-100 and the typical share. The screen cannot be back-tested, so this record is the evidence of whether cheap shares close their gap.'),
+    recordBanner(v, rec),
+    v.kind === 'none' ? null : horizonCard(rec),
+    v.kind === 'none' ? null : followedCard(rec),
+    h('details', { class: 'bg-how' },
+      h('summary', null, 'How to read this record'),
+      h('ul', { class: 'bg-list' }, ...(rec.caveats || []).map(c => h('li', null, c)))));
+}
+
+function recordBanner(v, rec) {
+  if (v.kind === 'none') return banner('info', h('b', null, 'Nothing is being followed yet. '), 'The record starts the day the first share passes every check.');
+  const lead = v.oldest > 0
+    ? `${plural(v.tracked, 'share is', 'shares are')} followed since ${F.date(v.since)}, the oldest for ${plural(v.oldest, 'day', 'days')}. `
+    : `${plural(v.tracked, 'share was', 'shares were')} logged on ${F.date(v.since)}; none has had time to show anything yet. `;
+  if (v.kind === 'early') {
+    return banner('info', h('b', null, 'Too early to say whether cheap shares close their gap. '),
+      lead + `A result is read only once ${F.int(v.min)} shares have been followed for the age in question (${(rec.horizons || []).map(x => B.ageLabel(x.days)).join(', ')}), so nothing below is a result yet.`);
+  }
+  const b = v.best;
+  return banner('info', h('b', null, `After ${B.ageLabel(b.days)}, ${plural(b.n, 'share', 'shares')} returned ${F.chgText(b.ret_mean, 1)} on average. `),
+    `Over the same days the typical share returned ${F.chgText(b.typical_mean, 1)} and the KSE-100 ${F.chgText(b.index_mean, 1)}; ${B.ofText(b.ahead_typical, b.ahead_typical_of) || 'none'} beat the typical share. Shares listed in the same weeks share the same market moves, so read this loosely.`);
+}
+
+// what the shares that are old enough did in their first 3 months, 6 months and year, against the two yardsticks
+function horizonCard(rec) {
+  const hz = (rec.horizons || []).filter(Boolean);
+  const tag = x => (!x.n ? chip('None old enough yet', 'outline') : !x.ready ? chip(`Too few: ${x.n} of ${F.int(rec.min_shares)}`, 'outline', { title: `An age is read only once ${F.int(rec.min_shares)} shares have been followed that long` }) : null);
+  const of = (k, n) => B.ofText(k, n) || F.NA;
+  const reached = x => (x.n ? `${x.reached_t2} of ${x.n}` : F.NA);
+  return card({
+    title: 'Results at fixed ages', flush: true,
+    info: 'Each share is read when it is 3 months, 6 months and a year past its listing day, so shares listed at different times can be compared. “Typical share” is the median return of every liquid Pakistani share over the same days; the KSE-100 leaves dividends out, which flatters the shares.',
+    body: h('div', null,
+      h('div', { class: 'tbl-wrap ev-wide' }, h('table', { class: 'tbl' },
+        h('thead', null, h('tr', null, TH('After'), TH('Shares', 'r'), TH('Cheap shares', 'r'), TH('Typical share', 'r'), TH('KSE-100', 'r'), TH('Ahead of typical share', 'r'), TH('Ahead of KSE-100', 'r'), TH('Reached fair value', 'r'))),
+        h('tbody', null, ...hz.map(x => h('tr', { class: x.ready ? null : 'bg-rec-dim' },
+          h('td', null, h('div', { class: 'row' }, h('b', null, B.ageLabel(x.days)), tag(x))),
+          h('td', { class: 'r' }, F.int(x.n)), h('td', { class: 'r' }, retCell(x.ret_mean)), h('td', { class: 'r' }, retCell(x.typical_mean)), h('td', { class: 'r' }, retCell(x.index_mean)),
+          h('td', { class: 'r' }, of(x.ahead_typical, x.ahead_typical_of)), h('td', { class: 'r' }, of(x.ahead_index, x.ahead_index_of)), h('td', { class: 'r' }, reached(x))))))),
+      h('div', { class: 'ev-cards' }, ...hz.map(x => h('div', { class: ['ev-crow', !x.ready && 'bg-rec-dim'] },
+        h('div', { class: 'ev-crow-top' }, h('div', { class: 'ev-crow-id' }, h('b', null, `After ${B.ageLabel(x.days)}`), tag(x)), h('div', { class: 'ev-crow-r' }, plural(x.n, 'share', 'shares'))),
+        h('div', { class: 'ev-crow-line' }, kv('Cheap shares', retCell(x.ret_mean)), kv('Typical share', retCell(x.typical_mean)), kv('KSE-100', retCell(x.index_mean))),
+        h('div', { class: 'ev-crow-line' }, kv('Ahead of typical share', of(x.ahead_typical, x.ahead_typical_of)), kv('Ahead of KSE-100', of(x.ahead_index, x.ahead_index_of))),
+        h('div', { class: 'ev-crow-line' }, kv('Reached fair value', reached(x))))))),
+  });
+}
+
+// every share ever logged, newest first: where it was listed, where it is, and what the two yardsticks did meanwhile
+function followedCard(rec) {
+  const rows = rec.rows || [];
+  const LIMIT = 15;
+  const st = { all: false };
+  const host = h('div');
+  const status = r => { const s = B.recordStatus(r); return chip(s.label, s.tone, s.key === 'review' ? { icon: 'alert' } : undefined); };
+  const way = r => (F.isNum(r.gap_closed_pct) ? `${F.num(r.gap_closed_pct, 0)}%` : F.NA);
+  const move = r => (F.isNum(r.px) && F.isNum(r.last) ? `${pkr(r.px)} → ${pkr(r.last)}` : F.NA);
+  function draw() {
+    const part = st.all ? rows : rows.slice(0, LIMIT);
+    replace(host,
+      h('div', { class: 'tbl-wrap ev-wide' }, h('table', { class: 'tbl fixed-first' },
+        h('thead', null, h('tr', null, TH('Share'), TH('Listed'), TH('Price then → now', 'r'), TH('Return', 'r'), TH('Typical share', 'r'), TH('KSE-100', 'r'), TH('Way to fair value', 'r'), TH('Status'))),
+        h('tbody', null, ...part.map(r => h('tr', null,
+          h('td', null, h('div', { class: 'scr-id' }, h('div', { class: 'scr-id-t' }, h('a', { class: 'sym', ...linkProps('/i/' + r.id) }, r.sym)), h('div', { class: 'nm', title: r.name }, r.name))),
+          h('td', null, F.date(r.listed), h('div', { class: 'muted fs-xs' }, sinceText(r))),
+          h('td', { class: 'r' }, move(r)), h('td', { class: 'r' }, retCell(r.ret_pct)), h('td', { class: 'r' }, retCell(r.typical_pct)), h('td', { class: 'r' }, retCell(r.index_pct)),
+          h('td', { class: 'r' }, way(r)), h('td', null, status(r))))))),
+      h('div', { class: 'ev-cards' }, ...part.map(r => h('div', { class: 'ev-crow' },
+        h('div', { class: 'ev-crow-top' },
+          h('div', { class: 'ev-crow-id' }, h('a', { class: 'sym', ...linkProps('/i/' + r.id) }, r.sym), h('div', { class: 'ev-crow-sub', title: r.name }, r.name)),
+          h('div', { class: 'ev-crow-r' }, h('div', { class: 'stack tight ev-end' }, retCell(r.ret_pct), status(r)))),
+        h('div', { class: 'ev-crow-line' }, kv('Listed', F.date(r.listed)), kv('', sinceText(r))),
+        h('div', { class: 'ev-crow-line' }, kv('Price', move(r)), kv('Way to fair value', way(r))),
+        h('div', { class: 'ev-crow-line' }, kv('Typical share', retCell(r.typical_pct)), kv('KSE-100', retCell(r.index_pct)))))),
+      rows.length > LIMIT ? h('div', { class: 'ev-more' }, h('button', { class: 'btn sm', type: 'button', onclick: () => { st.all = !st.all; draw(); } }, st.all ? 'Show fewer' : `Show all ${F.int(rows.length)}`)) : null);
+  }
+  draw();
+  return card({
+    title: 'Shares followed', flush: true,
+    info: '“Return” is the change in price since the listing day, adjusted for bonus issues, splits and dividends. “Way to fair value” is how much of the gap between the listing price and fair value has closed: 100% means fair value was reached. The two yardsticks cover the same days.',
+    body: host,
+  });
 }
 
 /* ======================================================================= cheap on paper, not listed */

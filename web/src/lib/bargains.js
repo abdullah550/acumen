@@ -55,3 +55,40 @@ export function nearMisses(rows) {
   const n = r => (r && Array.isArray(r.reasons) ? r.reasons.length : 99);
   return (Array.isArray(rows) ? rows : []).slice().sort((a, b) => n(a) - n(b) || (b.mos_pct || 0) - (a.mos_pct || 0));
 }
+
+/* ----------------------------------------------------------------------------------------------- the live record */
+
+/** The age a result is read at, in words: 90 days is "3 months", 365 days is "1 year". */
+export function ageLabel(days) {
+  if (!isNum(days) || days <= 0) return '';
+  if (days < 60) return `${Math.round(days)} days`;
+  if (days >= 360) { const y = Math.round(days / 365); return y === 1 ? '1 year' : `${y} years`; }
+  const m = Math.round(days / 30.4);
+  return `${m} months`;
+}
+
+/** "2 of 3", or an empty string when nothing could be compared. */
+export const ofText = (k, n) => (isNum(n) && n > 0 && isNum(k) ? `${k} of ${n}` : '');
+
+/**
+ * What the record says first. `none`: nothing logged yet; `early`: shares are followed but no age has enough of them to be read;
+ * `readable`: at least one age has, and `best` is the longest such age.
+ */
+export function recordHeadline(rec) {
+  const rows = rec && Array.isArray(rec.rows) ? rec.rows : [];
+  const hz = rec && Array.isArray(rec.horizons) ? rec.horizons.filter(Boolean) : [];
+  const counts = (rec && rec.counts) || {};
+  const best = hz.filter(x => x.ready).sort((a, b) => b.days - a.days)[0] || null;
+  const kind = !rows.length ? 'none' : best ? 'readable' : 'early';
+  return { kind, best, tracked: counts.tracked || rows.length, open: counts.open || 0, since: rec ? rec.since || null : null, oldest: rec ? rec.oldest_days || 0 : 0, min: rec ? rec.min_shares || 0 : 0 };
+}
+
+/** How a followed share is doing, as a label and the tone of its chip. A finished record says how it ended; an open one says the worst or best thing that is true of it. */
+export function recordStatus(r) {
+  if (!r) return { key: 'none', label: '', tone: 'outline' };
+  if (r.status === 'closed') return r.reason === 'fair_value' ? { key: 'fair', label: 'Reached fair value', tone: 'up' } : { key: 'time', label: 'Time ran out', tone: 'outline' };
+  if (isNum(r.last) && isNum(r.review_below) && r.last <= r.review_below) return { key: 'review', label: 'Below the re-read price', tone: 'warn' };
+  if (r.t1_date) return { key: 'first', label: 'Past the first target', tone: 'up' };
+  if (r.listed_now === false) return { key: 'dropped', label: 'No longer listed', tone: 'outline' };
+  return { key: 'following', label: 'Following', tone: 'accent' };
+}

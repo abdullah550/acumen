@@ -617,3 +617,8 @@
 .bg-mini-id span { font-size: var(--fs-xs); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bg-mini-px { font-size: var(--fs-sm); }
 .bg-card .ic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* ---- Bargains: the live record (the tables and phone cards reuse the Evidence ones: .ev-wide, .ev-cards, .ev-crow) */
+.bg-rec-dim td, .bg-rec-dim.ev-crow { opacity: 0.66; }
+.bg-rec .tbl td, .bg-rec .tbl th { white-space: nowrap; }
+.bg-rec .tbl .scr-id { min-width: 150px; }

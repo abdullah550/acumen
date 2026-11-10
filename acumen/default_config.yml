@@ -173,6 +173,10 @@ bargains:
   max_position_pct: 5           # of equity in any one of these: the model can be wrong
   max_list: 25
   max_excluded: 20
+  # the live record: every share is logged the day it first passes every check and followed against the KSE-100 and the typical liquid share
+  record_horizons_days: [90, 180, 365]   # a share's result is read this many days after it was listed, so shares listed at different times can be compared
+  record_min_shares: 20                  # shares that must have been followed for an age before its averages are read at all
+  record_cooldown_days: 90               # after a record closes, the same share is not logged again for this long
 
 # ---------------------------------------------------------------- portfolio profiles
 portfolio:
