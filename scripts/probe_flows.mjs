@@ -17,17 +17,24 @@ const parseRows = html => {
   return [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/gi)].map(m => [...m[1].matchAll(/<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi)].map(c => clean(c[1])));
 };
 
+const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1280, height: 1000 } });
+const ctx = await browser.newContext({ userAgent: UA, viewport: { width: 1280, height: 1000 } });
 const page = await ctx.newPage();
+let doc = '';
+page.on('response', async r => {
+  if (r.request().resourceType() === 'document' && r.status() === 200 && /sector-wise/.test(r.url())) { try { doc = await r.text(); } catch { /* gone */ } }
+});
 
 async function look(kind, ym, keep) {
   const url = `https://www.brecorder.com/markets/${kind}-sector-wise${ym ? '/' + ym : ''}`;
   const t0 = Date.now();
+  doc = '';
   let resp = null;
-  try { resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }); } catch (e) { log(kind, ym || 'default', 'goto failed:', String(e).slice(0, 160)); return; }
-  await page.waitForSelector('#financial-table', { timeout: 20000 }).catch(() => {});
-  let raw = ''; try { raw = await resp.text(); } catch { /* gone */ }
+  try { resp = await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 }); } catch (e) { log(kind, ym || 'default', 'goto:', String(e).slice(0, 160)); }
+  await page.waitForSelector('#financial-table', { timeout: 30000 }).catch(() => {});
+  await sleep(500);
+  const raw = doc;
   const rawRows = parseRows(raw);
   const dom = await page.evaluate(() => {
     const t = document.querySelector('#financial-table');
@@ -39,7 +46,7 @@ async function look(kind, ym, keep) {
   const rows = rawRows;
   const col = i => [...new Set(rows.map(r => r[i]))];
   const dates = col(1).map(d => Date.parse(d)).filter(Number.isFinite).sort((a, b) => a - b);
-  log(`${kind} ${ym || 'default'}: http ${resp.status()} ${Date.now() - t0}ms | title=${JSON.stringify(dom.title)} | meta=${JSON.stringify(dom.meta)} | rawRows=${rawRows.length} domRows=${dom.domRows} api=${JSON.stringify(dom.api)}`);
+  log(`${kind} ${ym || 'default'}: last http ${resp ? resp.status() : '-'} ${Date.now() - t0}ms docBytes=${raw.length} | title=${JSON.stringify(dom.title)} | meta=${JSON.stringify(dom.meta)} | rawRows=${rawRows.length} domRows=${dom.domRows} api=${JSON.stringify(dom.api)}`);
   if (rows.length) {
     log('   columns example:', JSON.stringify(rows[0]));
     log('   last row       :', JSON.stringify(rows[rows.length - 1]));
