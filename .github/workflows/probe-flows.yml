@@ -1,0 +1,48 @@
+# Temporary: looks at the investor flow sources from a GitHub server and keeps what it saw on the `report-probe` branch. Deleted once the answer is used.
+name: Probe the investor flow sources
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/probe_flows.mjs"
+      - ".github/workflows/probe-flows.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  look:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install a browser
+        run: |
+          mkdir -p "$RUNNER_TEMP/pw" && cd "$RUNNER_TEMP/pw"
+          npm init -y >/dev/null
+          npm install playwright >/dev/null 2>&1
+          npx playwright install --with-deps chromium 2>&1 | tail -2
+      - name: Look
+        shell: bash
+        run: node scripts/probe_flows.mjs 2>&1 | tee probe_out.txt
+      - name: Keep what it saw
+        if: always()
+        shell: bash
+        run: |
+          set -eu
+          remote="https://github.com/${GITHUB_REPOSITORY}.git"
+          header="$(git config --local --get http.https://github.com/.extraheader || true)"
+          auth=(); if [ -n "$header" ]; then auth=(-c "http.https://github.com/.extraheader=${header}"); fi
+          work="$(mktemp -d)"
+          cp probe_out.txt probe.txt "$work"/ 2>/dev/null || true
+          cp probe/* "$work"/ 2>/dev/null || true
+          cd "$work"
+          git init -q -b report-probe
+          git add .
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "probe $(date -u +%Y-%m-%dT%H:%MZ)"
+          git ${auth[@]+"${auth[@]}"} push --force "$remote" report-probe:refs/heads/report-probe
