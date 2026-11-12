@@ -20,7 +20,7 @@ jobs:
       - name: Delete the branch
         shell: bash
         run: |
-          for b in report-probe; do
+          for b in report-verify report-probe; do
             git push origin --delete "$b" || echo "$b: already gone or could not be deleted"
           done
           git ls-remote --heads origin
