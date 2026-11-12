@@ -83,6 +83,26 @@ def test_the_bargains_record_follows_every_listed_share_from_its_first_day(struc
     assert len(rec["caveats"]) >= 3 and rec["min_shares"] == 20 and rec["asof"] == body["asof"]
 
 
+def test_money_flows_are_written_for_pakistan_and_come_with_the_test_of_whether_they_predict(structured):
+    body, tile = structured.files["flows"], structured.overview["flows"]
+    assert structured.meta["files"]["flows"] == "flows.json" and body["ready"] is True
+    assert tile["ready"] and tile["asof"] == body["asof"] and tile["verdict"] == body["backtest"]["verdict"]  # the home tile is a short form of the file
+    assert body["counts"]["sectors"] >= 4 and len(body["sectors"]) == body["counts"]["sectors"]
+    assert {r["state"] for r in body["sectors"]} <= set(body["states"])
+    assert body["report"]["lines"] and body["report"]["week"] == body["weeks"][0]["week"] and len(body["weeks"]) == 1  # a first run saves this week once
+    bt = body["backtest"]
+    assert len(bt["tests"]) == 11 and sum(t["primary"] for t in bt["tests"]) == 2  # the two tests fixed in advance, nine more
+    assert bt["verdict"] in {"supported", "partial", "reversed", "not_shown", "too_short"} and bt["notes"]
+    assert body["investor"]["available"] is False and body["investor"]["note"]  # price and volume only, and the file says so
+    assert all(c["id"].startswith("PSX:") and c["pillars"] >= 2 for c in body["candidates"])
+    assert set(tile["entering"]) <= {r["name"] for r in body["sectors"]} and len(tile["entering"]) <= 3
+
+
+def test_a_world_with_nothing_to_find_never_shows_the_money_flows_as_a_signal(noise):
+    bt = noise.files["flows"]["backtest"]
+    assert bt["verdict"] != "supported"  # both fixed tests clearing the bar on pure noise would be a false alarm
+
+
 def test_the_published_ideas_agree_with_the_evidence_behind_them(structured):
     assert structured.ideas
     for idea in structured.ideas:

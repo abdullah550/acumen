@@ -35,6 +35,7 @@ Both sides must follow this document. When the pipeline and this document disagr
 | macro | `data/macro.{json,enc}` | Cross-asset and Pakistan macro panel |
 | prices | `data/prices.{json,enc}` | Latest quotes for every instrument (refreshed more often than the rest) |
 | bargains | `data/bargains.{json,enc}` | Pakistani shares priced far below a conservative fair value, and the cheap ones that failed a check |
+| flows | `data/flows.{json,enc}` | Where money has been entering and leaving Pakistani sectors (from price and volume), candidate shares, the weekly review and whether the measure has predicted anything |
 | detail | `data/detail/<market>/<SYMBOL>.{json,enc}` | Full data for one instrument (lazy loaded) |
 
 `<SYMBOL>` is the symbol with any character outside `[A-Za-z0-9._-]` replaced by `_`.
@@ -62,7 +63,7 @@ in localStorage (per device) and never sends it anywhere.
   "enc": null, "ext": "json",
   "files": {"overview":"overview.json","instruments":"instruments.json","ideas":"ideas.json",
             "portfolio":"portfolio.json","calibration":"calibration.json","ledger":"ledger.json",
-            "macro":"macro.json","prices":"prices.json","bargains":"bargains.json"},
+            "macro":"macro.json","prices":"prices.json","bargains":"bargains.json","flows":"flows.json"},
   "detail_path": "detail/{market}/{symbol}.json",
   "markets": {
     "psx":    {"label":"Pakistan Stock Exchange","currency":"PKR","asof":"2026-09-29","instruments":482,
@@ -132,7 +133,8 @@ A `sources[]` line with `ok: false` is a data source that failed in this run; `m
   "alerts": [{"level":"warn","market":"psx","text":"PSX data is 2 sessions old"}, {"level":"info","market":"fx","text":"..."}],
   "macro": {"usd_pkr":283.1,"policy_rate_pk":10.5,"dxy":101.2,"gold":2450.0,"brent":78.1,"vix":17.2},
   "bargains": {"counts":{"screened":466,"valued":208,"picks":3,"by_tier":{"50":0,"35":2,"20":1},"excluded":12},"asof":"2026-10-30","stale_days":2,
-               "top":[{"id":"PSX:DEMOA","sym":"DEMOA","name":"Demo Ltd","px":40.0,"fair":72.0,"mos_pct":44.4,"cents":56,"tier":35.0}]}
+               "top":[{"id":"PSX:DEMOA","sym":"DEMOA","name":"Demo Ltd","px":40.0,"fair":72.0,"mos_pct":44.4,"cents":56,"tier":35.0}]},
+  "flows": {"ready":true,"asof":"2026-10-30","entering":["Fertilizer","Textile Spinning"],"leaving":["Modarabas"],"candidates":25,"verdict":"not_shown"}
 }
 ```
 
@@ -143,6 +145,7 @@ A `sources[]` line with `ok: false` is a data source that failed in this run; `m
 `overview.calibration` is `{"calibrated": bool, "pooled_trades": int, "note": str}`: whether any pool's conviction mapping passed the out-of-sample check.
 `overview.bargains` is the home-screen tile of `bargains.json` (absent when the file was not built, for example when there is no Pakistani data): `counts` and the dates
 copied from the file, and `top`, the (up to three) best-listed shares with just enough to draw a line each. See `bargains.json` below.
+`overview.flows` is the home-screen tile of `flows.json` (absent when the file was not built): `ready`, `asof`, the (up to three) sectors entering and leaving, the number of `candidates` and the backtest `verdict`. See `flows.json` below.
 `overview.alerts[]` are `{"level":"warn|info","market":"all|psx|fx|crypto","text"}`. Besides data problems they say, in words, where signals have and have not
 beaten random entries (see `calibration.json`), so a reader who never opens the Evidence screen still learns whether anything is actionable.
 
@@ -475,10 +478,66 @@ return over their first `days` days, `index_mean`/`typical_mean` the yardsticks 
 how many touched each level within that time. An age is `ready` only when `n >= min_shares` (`bargains.record_min_shares`, 20); `verdict` is `none` (nothing logged), `early` (no age ready) or `readable`.
 Shares listed in the same weeks share the same market moves, so a ready age still says little when they were all listed together.
 
+### flows.json
+
+Where money has been entering and leaving Pakistani sectors, and whether that has predicted anything. Pakistan only. **Everything is measured from daily price and volume**:
+the traded value of a day (close x volume) counts as buying when the share's close rose and as selling when it fell (a tick rule). It is not investor-category data (foreign,
+mutual fund, bank, individual, ...): those National Clearing Company tables are behind a bot check this app does not get past, and `investor` says so.
+
+```json
+{
+  "generated_at": "2026-10-30T12:00:00Z", "asof": "2026-10-30", "ready": true,
+  "windows": {"fast": 7, "slow": 30},
+  "states": {"entering": "Entering", "turning_in": "Turning in", "neutral": "Neutral", "fading": "Fading", "leaving": "Leaving"},
+  "investor": {"available": false, "note": "These flows are measured from price and volume. ..."},
+  "market": {"n": 165, "pressure7": 30.5, "pressure30": 3.5, "ret7": 1.6, "ret30": 2.2, "turnover": 0.88, "value7": 21752.0},
+  "regime": { <the PSX regime object of overview.markets.psx> }, "macro": {"usd_pkr": 283.1, "policy_rate_pk": 10.5, "dxy": null, "gold": null, "brent": null, "vix": null},
+  "sectors": [{"name":"Fertilizer","n":4,"thin":true,"top":["FFC","EFERT","FATIMA"],"adv":373163082.0,
+               "pressure7":71.9,"pressure30":31.1,"rel7":41.3,"rel30":27.6,"z7":1.98,"z30":1.34,"score":1.66,"net7":5277.0,"net30":4306.0,
+               "ret7":1.7,"ret30":-3.8,"rel_ret30":-5.9,"breadth30":50.0,"turnover":2.17,"state":"entering"}, ...],
+  "candidates": [{"id":"PSX:TREET","sym":"TREET","name":"Treet Corporation Limited","sector":"Food & Personal Care Products","sector_state":"entering",
+                  "accumulation":true,"fundamentals":true,"interest":true,"pillars":3,"bargain":false,"pressure7":77.5,"pressure30":41.3,"turnover":1.38,
+                  "chg30":5.9,"eps_growth":39.0,"roe":10.0,"pe":10.1,"adv":73570293.0,"why":["30-day buying pressure +41% ...", "..."]}, ...],
+  "report": {"week":"2026-W44","asof":"2026-10-30","entering":[...],"leaving":[...],"turning_in":[...],"fading":[...],"beneficiaries":["PSX:TREET", ...],
+             "lines":["Money is entering: ...", "..."],"changes":[{"sector":"Fertilizer","from":"neutral","to":"entering"}]},
+  "weeks": [{"week":"2026-W44","asof":"2026-10-30","entering":[...],"leaving":[...],"turning_in":[...],"fading":[...]}, ...],
+  "live": {"weeks":1,"horizons":{"5":{"n":0,"mean_spread":null,"hit":null},"21":{"n":0,"mean_spread":null,"hit":null}},"rows":[{"week":"2026-W44","spread5":0.4,"spread21":null}]},
+  "backtest": { ... see below ... },
+  "counts": {"sectors":21,"shares":165,"candidates":25,"entering":3,"leaving":3},
+  "thresholds": {"state_z":0.5,"min_members":3,"min_rvol":1.25,"min_eps_growth_pct":10.0,"max_chase_pct":25.0}
+}
+```
+
+When there is too little history (fewer than 3 shares with 30 bars, or fewer than 4 sectors with enough liquid shares) the file is `{"ready": false, "note": ...}` with the same `states` and
+`investor` and the page says why instead of showing anything.
+
+`sectors`: only liquid shares (`min_adv`) with a known sector count, and only sectors with at least `flows.min_sector_members` (3) of them; `thin` marks fewer than `flows.thin_members` (5).
+`pressure7` / `pressure30` are net signed traded value divided by total traded value over the last 7 / 30 calendar days, in percent (-100 to +100). `rel7` / `rel30` subtract the whole liquid
+market's pressure. `z7` / `z30` compare each sector with the other sectors (cross-sector z-scores); `score` is their average. `state`: `entering` (both z at least `flows.state_z`, 0.5), `leaving` (both at most
+minus that), `turning_in` / `fading` (the 7-day z alone is at least / at most that), otherwise `neutral`. `net7` / `net30` are signed traded value in PKR million, `ret*` the sector's average price change in
+percent, `rel_ret30` that minus the market's, `breadth30` the share of the sector's shares that rose, `turnover` the last 7 days' traded value against its 90-day mean. Rows are best score first.
+
+`candidates` are liquid shares passing at least two of three tests (`flows.max_candidates` of them, most tests first, then entering sectors first): `accumulation` (30-day pressure in the top
+`flows.accumulation_top_pct` of liquid shares, 7-day not negative, price not up more than `flows.max_chase_pct` in 30 days), `fundamentals` (profit per share positive and up at least
+`flows.min_eps_growth_pct` on a year earlier, margin not negative) and `interest` (turnover at least `flows.min_rvol` times its 90-day norm: a **stand-in** for institutional participation, not a measure of it).
+`bargain` marks a share that is also on the Bargains list.
+
+`weeks` / `live`: the weekly archive kept in the history store (`state/flows_weekly.json`, one entry per ISO week, the last 104 weeks; it cannot be recomputed). Each refresh replaces the current week's entry
+and the first run of a new week adds one. `live` scores each archived week once 5 and 21 trading days have passed: the average relative return of the sectors it called entering minus those it called leaving.
+`mean_spread` and `hit` (share of weeks the spread was positive) are in percent; `rows` (the last 26 scored weeks) hold `spread5` / `spread21`, absent until scored. Nothing is reconstructed after the fact.
+
+`backtest`: does the 7- or 30-day measure rank which sectors do better afterwards? Every fifth trading day from 100 calendar days into the history, using only data to that day, sectors are ranked by
+the measure and compared with their return over the next 5, 10 and 21 trading days relative to the market. Each test gives `n` (anchors), `ic` (average rank correlation), `t` (Newey-West t-statistic, lag covering
+the overlap), `spread` / `spread_t` (best third of sectors, best fifth of shares, minus the worst, in percent, before costs), `hit` and its own `verdict` (`supported`, `reversed` or `none`). Eleven tests: nine sector
+tests (7-day, 30-day and both together, at three look-aheads) and two single-share tests. **Two were fixed before looking** (`primary: true`: 7-day against the next 5 days, 30-day against the next 21) and need
+`|t| >= flows.primary_t` (2.5); the others need `flows.other_t` (3.0) because with eleven tests a few look good by chance. The overall `verdict` reads only the two: `supported` (both), `partial` (one),
+`reversed`, `not_shown` (neither) or `too_short` (fewer than `flows.min_anchors`, 52, anchors). `headline`, `sector_line` and `stock_lines` say it in words, `notes` lists the limits (today's liquid names only, adjusted
+prices, no trading costs).
+
 ## History store (not read by the app)
 
 Between runs the pipeline keeps price history and small state files in a store directory (`--store`, default `store/`; on GitHub it is the single commit of the
-`data` branch): `bars_<market>.csv.gz` (columns `id,date,open,high,low,close,volume,approx_hl`) and `state/<name>.json` (the ledger, the Bargains live record `bargains_record`, backfill progress, node pins).
+`data` branch): `bars_<market>.csv.gz` (columns `id,date,open,high,low,close,volume,approx_hl`) and `state/<name>.json` (the ledger, the Bargains live record `bargains_record`, the weekly Money Flows archive `flows_weekly`, backfill progress, node pins).
 With a passphrase every store file is sealed: `bars_psx.csv.gz.enc`, `state/ledger.json.enc`, AES-256-GCM, key = PBKDF2-HMAC-SHA256 of the passphrase with its own
 salt (different from the site's key, so the browser never holds the key to the history), same `iv || ciphertext+tag` layout, gzip inside for JSON state and none for the
 bars (already gzip). The pipeline never writes a plain copy beside a sealed file; opening a sealed store without the passphrase, or with a wrong one, stops the run with an
@@ -492,6 +551,7 @@ error instead of starting again from empty history. A plain store is sealed the 
 | Ideas | ideas (+ instruments for filters/sparklines, prices for live price) |
 | Screener | instruments |
 | Bargains | bargains (+ meta for freshness, user settings from localStorage for the position cap) |
+| Money Flows | flows (+ meta for freshness) |
 | Instrument | detail (+ prices) |
 | Portfolio | portfolio, ideas, user settings from localStorage |
 | Markets | overview (sectors, strength, heat), macro |

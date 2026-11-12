@@ -622,3 +622,48 @@
 .bg-rec-dim td, .bg-rec-dim.ev-crow { opacity: 0.66; }
 .bg-rec .tbl td, .bg-rec .tbl th { white-space: nowrap; }
 .bg-rec .tbl .scr-id { min-width: 150px; }
+
+/* ---- Money Flows (the tables and phone cards reuse the Evidence ones: .ev-wide, .ev-cards, .ev-crow) */
+.fl-stats { padding-top: 2px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.fl-list { display: flex; flex-direction: column; }
+.fl-row { display: flex; flex-direction: column; gap: 3px; padding: 9px 0; border-top: 1px solid var(--line); min-width: 0; }
+.fl-row:first-child { padding-top: 0; border-top: 0; }
+.fl-row-t { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: var(--fs-md); }
+.fl-row-t .sym { font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+.fl-row-t .sym:hover { color: var(--accent); }
+.fl-row-s { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 14px; font-size: var(--fs-sm); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.fl-filter { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--line); }
+.fl-tbl th { white-space: normal; line-height: 1.3; vertical-align: bottom; padding-block: 8px; }
+.fl-tbl th.r { min-width: 72px; }
+.fl-tbl .scr-id { min-width: 170px; }
+.fl-tbl .scr-id .nm { max-width: 200px; }
+.fl-pcell { display: inline-flex; align-items: center; gap: 10px; }
+.fl-pnum { display: flex; flex-direction: column; min-width: 70px; line-height: 1.25; }
+.fl-pnum.fl-right { align-items: flex-end; }
+.fl-rel { font-size: var(--fs-2xs); color: var(--ink-3); font-weight: 400; }
+.fl-bar { position: relative; flex: none; width: 64px; height: 8px; border-radius: 4px; background: var(--surface-2); }
+.fl-bar::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; margin-left: -0.5px; background: var(--ink-3); opacity: .6; }
+.fl-bar i { position: absolute; top: 0; bottom: 0; }
+.fl-bar.pos i { left: 50%; background: var(--up); border-radius: 0 4px 4px 0; }
+.fl-bar.neg i { right: 50%; background: var(--down); border-radius: 4px 0 0 4px; }
+.fl-pillars { gap: 4px; }
+.fl-pillars .chip.fl-off { color: var(--ink-3); opacity: .75; }
+.fl-sec-state { margin-top: 3px; }
+.fl-tbl td.fl-why { white-space: normal; min-width: 260px; max-width: 380px; padding-block: 8px; font-size: var(--fs-xs); line-height: 1.45; color: var(--ink-2); }
+.fl-tbl td.fl-names { white-space: normal; min-width: 150px; max-width: 280px; padding-block: 8px; font-size: var(--fs-xs); line-height: 1.45; }
+.fl-tbl td.wrap .fl-pillars { min-width: 200px; }
+.fl-tbl tbody tr.fl-prim td { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.ev-crow.fl-prim { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+.fl-tcell { display: inline-flex; align-items: center; gap: 10px; }
+.fl-tcell .mono { min-width: 44px; text-align: right; }
+.fl-t { position: relative; flex: none; width: 132px; height: 8px; border-radius: 4px; background: var(--surface-2); }
+.fl-t-mid { position: absolute; left: 50%; top: -3px; bottom: -3px; width: 1px; margin-left: -0.5px; background: var(--ink-2); }
+.fl-t-mark { position: absolute; top: -3px; bottom: -3px; width: 0; margin-left: -0.5px; border-left: 1px dashed var(--ink-3); }
+.fl-t-bar { position: absolute; top: 0; bottom: 0; background: var(--ink-3); opacity: .5; }
+.fl-t-bar.hit.pos { background: var(--up); opacity: 1; }
+.fl-t-bar.hit.neg { background: var(--warning); opacity: 1; }
+@media (max-width: 720px) {
+  .fl-filter { padding-inline: var(--s-3); }
+  .fl-t { width: 120px; }
+}
+.ev-crow-id > .chip { align-self: flex-start; }

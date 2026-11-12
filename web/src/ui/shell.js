@@ -13,6 +13,7 @@ export const NAV = [
   { id: 'ideas', path: '/ideas', label: 'Trade Ideas', short: 'Ideas', icon: 'bolt' },
   { id: 'screener', path: '/screener', label: 'Screener', short: 'Screener', icon: 'table' },
   { id: 'bargains', path: '/bargains', label: 'Bargains', short: 'Bargains', icon: 'tag' },
+  { id: 'flows', path: '/flows', label: 'Money Flows', short: 'Flows', icon: 'swap' },
   { id: 'portfolio', path: '/portfolio', label: 'Portfolio', short: 'Portfolio', icon: 'brief' },
   { id: 'markets', path: '/markets', label: 'Markets', short: 'Markets', icon: 'globe' },
   { id: 'evidence', path: '/evidence', label: 'Evidence', short: 'Evidence', icon: 'shield' },
@@ -127,7 +128,7 @@ export function buildShell() {
   const mark = r => {
     const sec = sectionOf(r.segs);
     root.querySelectorAll('[data-nav]').forEach(a => {
-      if (a.dataset.nav === sec || (a.dataset.nav === 'more' && ['bargains', 'markets', 'evidence', 'settings'].includes(sec))) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+      if (a.dataset.nav === sec || (a.dataset.nav === 'more' && ['bargains', 'flows', 'markets', 'evidence', 'settings'].includes(sec))) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
     const n = NAV.find(x => x.id === sec);
     title.textContent = r.segs[0] === 'i' ? 'Instrument' : n ? n.label : 'Acumen';

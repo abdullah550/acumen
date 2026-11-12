@@ -178,6 +178,25 @@ bargains:
   record_min_shares: 20                  # shares that must have been followed for an age before its averages are read at all
   record_cooldown_days: 90               # after a record closes, the same share is not logged again for this long
 
+# ---------------------------------------------------------------- flows: where money is entering and leaving (acumen/analysis/flows.py)
+# Buying pressure measured from price and volume over 7 and 30 calendar days, sector against market. Fixed rules, none fitted to data.
+flows:
+  min_sector_members: 3         # liquid shares a sector needs to be compared
+  thin_members: 5               # a sector with fewer is marked thin
+  state_z: 0.5                  # a sector is "entering" when both windows are this many standard deviations above the sector average, "leaving" when below
+  # the candidate screen: a share needs at least two of three
+  accumulation_top_pct: 66.7    # 30-day buying pressure in the top third of liquid shares (and not negative over 7 days)
+  max_chase_pct: 25             # ...and not already up more than this in a month
+  min_eps_growth_pct: 10        # improving fundamentals: profitable, profit per share up at least this on a year earlier
+  min_rvol: 1.25                # trading interest: last 7 days' turnover over its 90-day norm
+  max_candidates: 25
+  # the backtest of the 7- and 30-day measures against later sector returns (acumen/analysis/flows_backtest.py)
+  primary_t: 2.5                # the two tests fixed in advance need |t| at least this
+  other_t: 3.0                  # the other combinations, which are shown but cannot carry the verdict
+  min_anchors: 52               # weekly checks needed before a verdict is given
+  backtest_min_sectors: 8
+  backtest_min_shares: 40
+
 # ---------------------------------------------------------------- portfolio profiles
 portfolio:
   profiles:

@@ -122,6 +122,7 @@ never your positions), like any site you visit.
 * No paid data, no broker feed, no scraping behind a login, no news or sentiment feed, no analyst forecasts.
 * No **point-in-time fundamentals**. Fundamentals are today's values, so they cannot be back-tested without look-ahead; they are kept out of the back-test and only
   move live conviction by a bounded tilt (`signals.max_tilt_points`, 12 points).
+* No **investor-category flow data** (foreign, mutual funds, banks, individuals), which the National Clearing Company (NCCPL) publishes and some newspapers repeat. Those pages sit behind a bot check that a scheduled job on GitHub cannot pass, and Acumen does not try to get round a site's bot check. The Money Flows page is therefore measured from the daily price and volume Acumen already has (the day's traded value counts as buying when the close rose and as selling when it fell) and says so on the page. A licensed data API or a file you export yourself could be added later; neither is part of the app today.
 * No intraday data in the analysis. Everything analysed is daily bars; the live quote (above) only refreshes the price shown, and PSX is 15 minutes delayed.
 * No corporate-action history for crypto and forex (not needed) and no dividends data for PSX beyond what the screener's yield implies.
 

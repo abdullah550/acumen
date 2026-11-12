@@ -15,6 +15,7 @@ import pandas as pd
 from . import __version__
 from .analysis import bargains as bg
 from .analysis import bargains_record as br
+from .analysis import flows as fl
 from .analysis import fundamental as fu
 from .analysis import ideas as idm
 from .analysis import ledger as led
@@ -348,6 +349,20 @@ def run(
                     "strength": st["strength"], "matrix": st["matrix"], "movers": mk.movers([s for s in ss if s.tradable]),
                     "counts": {"instruments": len(data["fx"].instruments), "analysed": sum(1 for s in ss if s.enough_history), "ideas": n_ideas["fx"]}}
         overview_markets[market] = body
+    flows = None
+    if "psx" in data and snaps_by_market.get("psx"):  # where money is entering and leaving, measured from price and volume (see ``analysis/flows.py``)
+        liquid_min = float(cfg.get_path("universe.psx.min_adv_value", 5e6))
+        psx_eq = [s for s in snaps_by_market["psx"] if s.kind == "equity" and s.sector and (s.row.get("adv") or 0.0) >= liquid_min]
+        flows_state = store.load_json(fl.STATE_NAME) if store else None
+        flows, flows_state = fl.build(
+            cfg.get_path, bars=bars_all, shares=[{"id": s.id, "sym": s.sym, "name": s.name, "sector": s.sector} for s in psx_eq],
+            funds={s.id: data["psx"].fundamentals.get(s.id) or {} for s in psx_eq}, asof=ctx["psx"].get("asof"), adv={s.id: float(s.row.get("adv") or 0.0) for s in psx_eq},
+            bargain_ids={p["id"] for p in (bargains or {}).get("picks", [])}, regime=overview_markets.get("psx", {}).get("regime"), macro=headline,
+            archive=flows_state, now_iso=now_iso)
+        if store and flows_state is not None:
+            store.save_json(fl.STATE_NAME, flows_state)
+        if flows.get("ready"):
+            log(f"  flows: {flows['counts']['entering']} sectors entering, {flows['counts']['leaving']} leaving, {flows['counts']['candidates']} candidate shares; backtest verdict: {flows['backtest']['verdict']}")
     actionable = [i for i in ideas if i["actionable"]]
     top_ideas, per_pool = [], {}
     for i in actionable:  # best first, at most 4 per market and horizon so one pool cannot fill the list
@@ -395,6 +410,8 @@ def run(
     }
     if bargains is not None:
         overview["bargains"] = bg.summary(bargains)
+    if flows is not None:
+        overview["flows"] = fl.summary(flows)
 
     # ---- instruments, ideas, calibration, prices
     rows = [s.row for s in all_snaps]
@@ -429,6 +446,8 @@ def run(
     }
     if bargains is not None:
         files["bargains"] = writer.write("bargains", bargains)
+    if flows is not None:
+        files["flows"] = writer.write("flows", flows)
 
     # ---- meta
     markets_meta, sources = {}, []

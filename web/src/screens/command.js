@@ -12,6 +12,7 @@ import { macroTile } from '../ui/macro.js';
 import { pulseStrip } from '../ui/pulse.js';
 import { breadthBlock } from '../ui/market.js';
 import { pageHead, sectionTitle, rankIdeas, errorBlock } from './common.js';
+import { verdictView as flowsVerdict } from '../lib/flows.js';
 
 export default async function render() {
   const root = h('div', { class: 'stack loose' });
@@ -80,6 +81,10 @@ export default async function render() {
   const bargains = bargainsCard(ov);
   if (bargains) root.append(bargains);
 
+  // money flows: which sectors money has been entering and leaving (only when this data has them)
+  const flows = flowsCard(ov);
+  if (flows) root.append(flows);
+
   // market cards
   root.append(h('section', { class: 'stack' }, sectionTitle('Market regime', null, 'Is the backdrop helping or hurting? Regime feeds the conviction score for every idea in that market.'),
     h('div', { class: 'grid c3' }, ...MARKETS.filter(m => ov.markets[m]).map(m => marketCard(m, ov.markets[m], cleanups)))));
@@ -113,6 +118,22 @@ function bargainsCard(ov) {
     title: 'Bargains', info: 'Pakistani shares priced far below a deliberately conservative fair value (the middle of three low yardsticks), and only those that also clear the checks that keep value traps out. A screen that tells you where to look: it is not back-tested.',
     actions: [h('a', { class: 'btn ghost sm', ...linkProps('/bargains') }, 'See all', icon('right'))],
     body: h('div', { class: 'stack' }, near, h('p', { class: 'muted', style: { fontSize: 'var(--fs-xs)' } }, `${F.int(c.valued)} Pakistani shares valued: ${F.int(c.picks)} pass every check${c.by_tier && c.by_tier['50'] ? `, ${F.int(c.by_tier['50'])} at 50 cents on the dollar or less` : ', none yet at 50 cents on the dollar'}.`)),
+  });
+}
+
+/* ---------- money flows ---------- */
+function flowsCard(ov) {
+  const f = ov.flows;
+  if (!f || !f.ready) return null;
+  const col = (title, names, tone, none) => h('div', { class: 'stack tight' }, h('div', { class: 'ic-l' }, title),
+    names && names.length ? h('div', { class: 'row wrap' }, ...names.map(n => chip(n, tone))) : h('span', { class: 'muted', style: { fontSize: 'var(--fs-sm)' } }, none));
+  const v = flowsVerdict({ verdict: f.verdict });
+  return card({
+    title: 'Money Flows', info: 'Which Pakistani sectors have had buying pressure above or below the rest of the market over both the last 7 and the last 30 days, measured from price and volume. The Money Flows page also tests whether that has predicted anything.',
+    actions: [h('a', { class: 'btn ghost sm', ...linkProps('/flows') }, 'See all', icon('right'))],
+    body: h('div', { class: 'stack' },
+      h('div', { class: 'grid c2' }, col('Money entering', f.entering, 'up', 'No sector is clearly above the market.'), col('Money leaving', f.leaving, 'down', 'No sector is clearly below the market.')),
+      h('p', { class: 'muted', style: { fontSize: 'var(--fs-xs)', margin: 0 } }, `${F.int(f.candidates)} ${f.candidates === 1 ? 'share passes' : 'shares pass'} at least two of three screen tests. ${v.title}`)),
   });
 }
 

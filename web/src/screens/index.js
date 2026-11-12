@@ -3,6 +3,7 @@ import ideas from './ideas.js';
 import instrument from './instrument.js';
 import screener from './screener.js';
 import bargains from './bargains.js';
+import flows from './flows.js';
 import portfolio from './portfolio.js';
 import markets from './markets.js';
 import evidence from './evidence.js';
@@ -13,6 +14,7 @@ export const routes = [
   { id: 'ideas', title: 'Trade Ideas', test: s => s[0] === 'ideas', render: ideas },
   { id: 'screener', title: 'Screener', test: s => s[0] === 'screener', render: screener },
   { id: 'bargains', title: 'Bargains', test: s => s[0] === 'bargains', render: bargains },
+  { id: 'flows', title: 'Money Flows', test: s => s[0] === 'flows', render: flows },
   { id: 'instrument', title: 'Instrument', test: s => s[0] === 'i', render: instrument },
   { id: 'portfolio', title: 'Portfolio', test: s => s[0] === 'portfolio', render: portfolio },
   { id: 'markets', title: 'Markets', test: s => s[0] === 'markets', render: markets },
