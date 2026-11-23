@@ -1,0 +1,41 @@
+Acumen doctor, 2026-11-23 16:30 UTC
+user agent: AcumenPersonalAnalytics/1.0
+
+Pakistan Stock Exchange
+  ok    PSX data portal: request token                   1.9s  the front page carries a request token (43 characters), sent as X-Req-Id on every data request
+  ok    PSX data portal: share list                      3.4s  765 listed shares and 302 other instruments
+  ok    PSX data portal: price history                   1.4s  OGDC: 1,239 daily bars, newest 2026-11-23, close 310.6
+  ok    PSX data portal: a past session                  2.3s  513 symbols traded on 2026-11-20
+  ok    PSX data portal: live market watch               1.0s  496 rows in the live market watch
+  ok    TradingView: fundamentals                        0.1s  484 shares, 265 with a P/E
+  ok    Yahoo: fallback history                          0.1s  OGDC.KA: 256 daily bars, newest 2026-11-20, close 312.5
+
+Forex and metals
+  ok    Yahoo: forex prices                              0.6s  EURUSD=X: 22 daily bars, newest 2026-11-23, close 1.09
+  ok    Yahoo: USD/PKR                                   0.6s  USDPKR=X: 22 daily bars, newest 2026-11-23, close 276.2
+  WARN  Yahoo: USD/PKR against its crosses               1.9s  11 of 22 dollar-rupee closes differ from the crosses by more than 0.8% (largest 3.1%, on 2026-11-02): Yahoo has mixed a second quote level into its bars
+        -> dollar-rupee bars that stray are repaired from the crosses, when the crosses answer
+  ok    Yahoo: gold                                      1.2s  GC=F: 22 daily bars, newest 2026-11-23, close 3,676
+  ok    ECB daily fixings (Frankfurter)                  1.5s  15 daily fixings, newest 2026-11-20
+  ok    Daily rate snapshots (currency-api)              0.3s  snapshot for 2026-11-21: 340 currencies, including PKR
+
+Crypto
+  ok    CoinGecko: coin list and market caps             2.7s  250 coins (top: BTC); BTC dominance 58.1%
+  ok    Binance: daily candles                           1.0s  721 markets; BTCUSDT: 29 daily bars, newest 2026-11-22, close 6.127e+04
+  ok    OKX: daily candles                               0.4s  500 markets; BTC-USDT: 99 daily bars, newest 2026-11-22, close 6.127e+04
+  ok    Coinbase: daily candles                          0.7s  404 markets; BTC-USD: 29 daily bars, newest 2026-11-22, close 6.116e+04
+  ok    Kraken: daily candles                            1.3s  628 markets; XBTUSD: 29 daily bars, newest 2026-11-22, close 6.117e+04
+  ok    KuCoin: daily candles                            0.4s  814 markets; BTC-USDT: 29 daily bars, newest 2026-11-22, close 6.127e+04
+  ok    Fear and greed index                             0.2s  fear and greed index 11
+
+Macro context
+  ok    Yahoo: dollar index, yields, oil, gold, equities   3.7s  7 of 7 series
+  WARN  FRED: US rates and Pakistan policy rate         28.6s  no FRED series answered in time
+        -> the policy-rate table in config.yml is used
+  ok    IMF and World Bank: Pakistan inflation           0.1s  World Bank: Pakistan inflation 3.5% for 2025 (the IMF did not answer: HTTP 403)
+
+Verdict
+  Pakistan Stock Exchange    OK
+  Forex and metals           DEGRADED  Yahoo: USD/PKR against its crosses: dollar-rupee bars that stray are repaired from the crosses, when the crosses answer
+  Crypto                     OK
+  Macro context              DEGRADED  FRED: US rates and Pakistan policy rate: the policy-rate table in config.yml is used
